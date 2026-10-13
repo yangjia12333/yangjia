@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小团子 · 一点小小的快乐</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: radial-gradient(circle at 50% 30%, #1b2340 0%, #0e1124 55%, #07080f 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 背景里缓缓漂动的光点 */
+  .stars { position: fixed; inset: 0; pointer-events: none; }
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: #fff;
+    animation: twinkle var(--dur, 4s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+    opacity: 0.5;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.15; transform: scale(0.7); }
+    50%      { opacity: 0.9;  transform: scale(1.15); }
+  }
+
+  .stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 42px;
+    z-index: 2;
+  }
+
+  /* 小团子本体 */
+  .blob {
+    position: relative;
+    width: 200px;
+    height: 180px;
+    border-radius: 50% 50% 48% 52% / 56% 54% 46% 44%;
+    background: radial-gradient(circle at 35% 30%, #ffe6a7 0%, #ffcf6b 40%, #ff9f68 78%, #f47b6b 100%);
+    box-shadow:
+      0 0 60px rgba(255, 176, 108, 0.55),
+      0 0 120px rgba(255, 140, 120, 0.30),
+      inset -18px -22px 40px rgba(214, 92, 84, 0.45),
+      inset 18px 20px 40px rgba(255, 255, 255, 0.55);
+    animation: floaty 3.6s ease-in-out infinite;
+    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center bottom;
+  }
+  @keyframes floaty {
+    0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+    50%      { transform: translateY(-16px) rotate(1.5deg); }
+  }
+  .blob.hop { animation: hop 0.6s cubic-bezier(0.28, 1.5, 0.5, 1); }
+  @keyframes hop {
+    0%   { transform: translateY(0) scale(1, 1); }
+    25%  { transform: translateY(0) scale(1.18, 0.82); }
+    50%  { transform: translateY(-58px) scale(0.92, 1.12); }
+    75%  { transform: translateY(0) scale(1.12, 0.88); }
+    100% { transform: translateY(0) scale(1, 1); }
+  }
+
+  /* 眼睛 */
+  .eyes { position: absolute; top: 58px; left: 0; width: 100%; display: flex; justify-content: center; gap: 46px; }
+  .eye {
+    width: 30px; height: 34px;
+    background: #34304a;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s ease-out;
+    overflow: hidden;
+  }
+  .pupil {
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s ease-out;
+  }
+  .shine {
+    width: 7px; height: 7px;
+    background: #fff;
+    border-radius: 50%;
+    transform: translate(-4px, -4px);
+  }
+  .blob.happy .eye { height: 8px; border-radius: 20px; margin-top: 12px; }
+  .blob.happy .pupil { opacity: 0; }
+
+  /* 腮红 */
+  .blush {
+    position: absolute; top: 100px; width: 26px; height: 14px;
+    background: rgba(255, 108, 118, 0.55);
+    border-radius: 50%;
+    filter: blur(4px);
+    opacity: 0.75;
+  }
+  .blush.l { left: 26px; }
+  .blush.r { right: 26px; }
+
+  /* 微笑的嘴 */
+  .mouth {
+    position: absolute; left: 50%; top: 104px; transform: translateX(-50%);
+    width: 26px; height: 13px;
+    border: 3.5px solid #34304a;
+    border-top: none;
+    border-radius: 0 0 30px 30px;
+    transition: all 0.15s ease;
+  }
+  .blob.happy .mouth { width: 38px; height: 22px; border-width: 4.5px; }
+
+  /* 影子 */
+  .shadow {
+    position: absolute; bottom: -26px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 22px; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(0,0,0,0.45), transparent 70%);
+    animation: shadowScale 3.6s ease-in-out infinite;
+  }
+  @keyframes shadowScale {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.55; }
+    50%      { transform: translateX(-50%) scale(0.78); opacity: 0.32; }
+  }
+
+  /* 飘起来的爱心 / 星星 */
+  .floaty-bit {
+    position: absolute;
+    pointer-events: none;
+    font-size: 22px;
+    animation: rise 1.5s ease-out forwards;
+    will-change: transform, opacity;
+  }
+  @keyframes rise {
+    0%   { transform: translate(0, 0) scale(0.4) rotate(0deg); opacity: 0; }
+    20%  { opacity: 1; }
+    100% { transform: translate(var(--dx), -140px) scale(1.1) rotate(var(--rot)); opacity: 0; }
+  }
+
+  /* 提示文字 */
+  .hint {
+    color: #cfd4ee;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    opacity: 0.75;
+    transition: opacity 0.4s ease;
+    text-align: center;
+    line-height: 1.9;
+  }
+  .hint b { color: #ffd479; font-weight: 600; }
+
+  /* 弹出的暖心话 */
+  .message {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
+    max-width: 82vw;
+    padding: 26px 34px;
+    border-radius: 22px;
+    background: rgba(255, 250, 240, 0.97);
+    color: #3a2f47;
+    font-size: clamp(18px, 2.4vw, 26px);
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.7;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.5) inset;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 10;
+  }
+  .message.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+</style>
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+
+  <div class="stage">
+    <div class="blob" id="blob">
+      <div class="eyes">
+        <div class="eye"><div class="pupil"><div class="shine"></div></div></div>
+        <div class="eye"><div class="pupil"><div class="shine"></div></div></div>
+      </div>
+      <div class="blush l"></div>
+      <div class="blush r"></div>
+      <div class="mouth"></div>
+      <div class="shadow"></div>
+    </div>
+    <div class="hint" id="hint">它一直在 <b>看着你</b> 呢<br />点它一下试试 :)</div>
+  </div>
+
+  <div class="message" id="message"></div>
+
+<script>
+  const blob = document.getElementById('blob');
+  const hint = document.getElementById('hint');
+  const messageEl = document.getElementById('message');
+  const starsWrap = document.getElementById('stars');
+
+  /* —— 背景星光 —— */
+  (function makeStars() {
+    const n = 60;
+    let html = '';
+    for (let i = 0; i < n; i++) {
+      const size = (Math.random() * 2.2 + 1).toFixed(1);
+      html += `<div class="star" style="
+        left:${(Math.random()*100).toFixed(2)}%;
+        top:${(Math.random()*100).toFixed(2)}%;
+        width:${size}px; height:${size}px;
+        --dur:${(Math.random()*4+3).toFixed(1)}s;
+        --delay:${(Math.random()*4).toFixed(1)}s;"></div>`;
+    }
+    starsWrap.innerHTML = html;
+  })();
+
+  /* —— 眼睛跟着鼠标转 —— */
+  const pupils = document.querySelectorAll('.pupil');
+  document.addEventListener('mousemove', (e) => {
+    const rect = blob.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const ang = Math.atan2(e.clientY - cy, e.clientX - cx);
+    const dist = Math.min(9, Math.hypot(e.clientX - cx, e.clientY - cy) / 22);
+    const x = Math.cos(ang) * dist;
+    const y = Math.sin(ang) * dist;
+    pupils.forEach(p => { p.style.transform = `translate(${x}px, ${y}px)`; });
+  });
+
+  /* —— 暖心话 —— */
+  const messages = [
+    "你今天已经做得很好啦 🌷",
+    "嘿，你笑起来一定很好看 😊",
+    "别忘了，你也值得被温柔对待 🌙",
+    "深呼吸一下，一切都会好的 ☁️",
+    "这个世界因为有你，多了一点亮 ✨",
+    "累了就歇一歇，没关系的 🍵",
+    "你比你以为的，要勇敢得多 🌟",
+    "有人在偷偷惦记着你哦 💛",
+    "请把这份快乐，也分给下一个人 🤝",
+    "现在，给自己一个大大的拥抱吧 🫂"
+  ];
+  let lastIndex = -1;
+
+  /* —— 点一下，蹦起来撒心 —— */
+  const bits = ['💛', '✨', '🌷', '💛', '⭐', '🎈', '🌟', '💖'];
+  let msgTimer = null;
+
+  function pop(x, y) {
+    // 蹦跳
+    blob.classList.remove('hop');
+    void blob.offsetWidth;
+    blob.classList.add('hop');
+    blob.classList.add('happy');
+    setTimeout(() => blob.classList.remove('happy'), 700);
+
+    // 撒出小心心
+    const rect = blob.getBoundingClientRect();
+    const originX = rect.left + rect.width / 2;
+    const originY = rect.top + rect.height / 2;
+    for (let i = 0; i < 12; i++) {
+      const bit = document.createElement('div');
+      bit.className = 'floaty-bit';
+      bit.textContent = bits[Math.floor(Math.random() * bits.length)];
+      const startX = originX + (Math.random() - 0.5) * 120;
+      const startY = originY + (Math.random() - 0.5) * 60;
+      bit.style.left = startX + 'px';
+      bit.style.top = startY + 'px';
+      bit.style.setProperty('--dx', ((Math.random() - 0.5) * 160).toFixed(0) + 'px');
+      bit.style.setProperty('--rot', ((Math.random() - 0.5) * 120).toFixed(0) + 'deg');
+      bit.style.fontSize = (16 + Math.random() * 16).toFixed(0) + 'px';
+      document.body.appendChild(bit);
+      setTimeout(() => bit.remove(), 1600);
+    }
+
+    // 弹一句暖心话
+    let idx;
+    do { idx = Math.floor(Math.random() * messages.length); }
+    while (idx === lastIndex && messages.length > 1);
+    lastIndex = idx;
+
+    messageEl.textContent = messages[idx];
+    messageEl.classList.add('show');
+    clearTimeout(msgTimer);
+    msgTimer = setTimeout(() => messageEl.classList.remove('show'), 2600);
+
+    hint.style.opacity = '0';
+  }
+
+  document.addEventListener('pointerdown', (e) => {
+    // 避免点消息框时重复触发，其余任意处都可触发
+    pop(e.clientX, e.clientY);
+  });
+
+  // 键盘空格 / 回车也能逗它
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'Enter') {
+      e.preventDefault();
+      const rect = blob.getBoundingClientRect();
+      pop(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }
+  });
+</script>
+</body>
+</html>
