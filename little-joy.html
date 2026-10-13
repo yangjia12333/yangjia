@@ -86,14 +86,18 @@
     transition: transform 0.15s ease-out;
     transform-origin: center bottom;
   }
-  /* 怒气越高，脸越红 */
+  /* 怒气越高，脸越红（越气跳得越急） */
   .rage-tint {
     position: absolute; inset: 0;
     border-radius: inherit;
     background: radial-gradient(circle at 50% 48%, rgba(232,70,70,0.95), rgba(196,40,40,0.55) 72%);
-    opacity: calc(var(--rage, 0) * 0.62);
+    opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    animation: rageThrob 1.5s ease-in-out infinite;
+  }
+  @keyframes rageThrob {
+    0%, 100% { opacity: calc(var(--rage, 0) * 0.42); }
+    50%      { opacity: calc(var(--rage, 0) * 0.70); }
   }
   /* 不耐烦的晃动，末尾还“哼”一下 */
   @keyframes idle-sway {
@@ -128,31 +132,37 @@
     100% { transform: scale(1, 1) rotate(0); }
   }
 
-  /* 眉毛：右眉压得低（生气），左眉挑起来（欠揍） */
+  /* 眉毛：左眉挑起（欠揍），右眉压低（生气）—— 怒气越高，反差越大 */
   .brows { position: absolute; top: 44px; left: 0; width: 100%; }
   .brow {
     position: absolute;
     width: 30px; height: 7px;
     background: #2f2b40;
     border-radius: 5px;
-    transition: transform 0.15s ease;
+    transition: transform 0.18s ease;
   }
-  .brow.l { left: 44px;  transform: rotate(11deg) translateY(-5px); }
-  .brow.r { right: 44px; transform: rotate(-24deg); }
-  .blob.annoyed .brow.l { transform: rotate(16deg) translateY(-9px); }
-  .blob.annoyed .brow.r { transform: rotate(-32deg) translate(-1px, 3px); }
+  .brow.l {
+    left: 44px;
+    transform: rotate(calc(11deg + var(--rage, 0) * 12deg))
+               translateY(calc(-5px - var(--rage, 0) * 7px));
+  }
+  .brow.r {
+    right: 44px;
+    transform: rotate(calc(-24deg - var(--rage, 0) * 16deg));
+  }
 
   /* 眼睛：半耷拉着，很不屑 */
   .eyes { position: absolute; top: 64px; left: 0; width: 100%; display: flex; justify-content: center; gap: 46px; }
   .eye {
     position: relative;
-    width: 34px; height: 20px;
+    width: 34px;
+    height: calc(20px - var(--rage, 0) * 9px);   /* 越气眯得越紧 */
     background: #e9e6f0;
     border-radius: 5px 5px 18px 18px;
     display: flex; align-items: flex-end; justify-content: center;
     padding-bottom: 1px;
     overflow: hidden;
-    transition: height 0.15s ease, background 0.15s ease;
+    transition: height 0.18s ease;
   }
   .pupil {
     width: 12px; height: 12px;
@@ -160,7 +170,6 @@
     border-radius: 50%;
     transition: transform 0.15s ease-out;
   }
-  .blob.annoyed .eye { height: 13px; }
 
   /* 翻白眼 / 打哈欠 */
   .blob.yawning .pupil { transform: translateY(-7px) !important; }
@@ -185,17 +194,17 @@
     50%      { transform: scale(calc(1.18 + var(--rage, 0) * 0.55)); opacity: 1; }
   }
 
-  /* 瘪着 / 斜着的嘴（一边高一边低，很欠揍） */
+  /* 瘪着 / 斜着的嘴（一边高一边低，越气越歪） */
   .mouth {
     position: absolute; left: 50%; top: 104px;
-    transform: translateX(-50%) rotate(-9deg);
-    width: 32px; height: 11px;
+    transform: translateX(-50%) rotate(calc(-9deg - var(--rage, 0) * 6deg));
+    width: calc(32px - var(--rage, 0) * 7px);
+    height: calc(11px - var(--rage, 0) * 4px);
     border: 3.5px solid #2f2b40;
     border-bottom: none;
     border-radius: 30px 30px 0 0;
-    transition: all 0.15s ease;
+    transition: all 0.18s ease;
   }
-  .blob.annoyed .mouth { width: 26px; height: 8px; border-width: 4.5px; transform: translateX(-50%) rotate(-13deg); }
   /* 打哈欠：张大嘴 */
   .blob.yawning .mouth {
     width: 20px; height: 24px;
@@ -269,28 +278,6 @@
   }
   .hint b { color: #d98b8b; font-weight: 600; }
 
-  /* 怒气条 */
-  .rage-meter {
-    display: flex; align-items: center; gap: 10px;
-    opacity: 0; transform: translateY(-6px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
-  }
-  .rage-meter.show { opacity: 1; transform: translateY(0); }
-  .rage-label { color: #d98b8b; font-size: 13px; letter-spacing: 3px; }
-  .rage-track {
-    width: 170px; height: 8px; border-radius: 8px;
-    background: rgba(255,255,255,0.12);
-    overflow: hidden;
-  }
-  .rage-fill {
-    height: 100%; width: 0%;
-    border-radius: 8px;
-    background: linear-gradient(90deg, #e0a24a, #e05252);
-    transition: width 0.3s ease;
-  }
-  .rage-meter.max .rage-track { animation: rageFlash 0.4s steps(2, end) 3; }
-  @keyframes rageFlash { 0% { background: rgba(255,255,255,0.12); } 100% { background: rgba(224,82,82,0.6); } }
-
   /* 弹出的没好气的话 —— 挂在团子头顶的对话气泡 */
   .message {
     position: absolute;
@@ -358,10 +345,6 @@
     </div>
    </div>
     <div class="hint" id="hint">看什么看。<br />……别拿手指戳<b>我</b>。</div>
-    <div class="rage-meter" id="rageMeter">
-      <span class="rage-label">怒气</span>
-      <div class="rage-track"><div class="rage-fill" id="rageFill"></div></div>
-    </div>
   </div>
 
 <script>
@@ -372,8 +355,6 @@
   const messageEl = document.getElementById('message');
   const starsWrap = document.getElementById('stars');
   const flashEl = document.getElementById('flash');
-  const rageMeter = document.getElementById('rageMeter');
-  const rageFill = document.getElementById('rageFill');
 
   /* —— 背景冷光点 —— */
   (function makeStars() {
@@ -490,10 +471,7 @@
   /* ============ 怒气 ============ */
   function setRage(r) {
     rage = Math.max(0, Math.min(RAGE_MAX, r));
-    const ratio = rage / RAGE_MAX;
-    blob.style.setProperty('--rage', ratio.toFixed(3));
-    rageFill.style.width = (ratio * 100) + '%';
-    rageMeter.classList.toggle('max', rage >= RAGE_MAX);
+    blob.style.setProperty('--rage', (rage / RAGE_MAX).toFixed(3));  // 表情全靠这个值
   }
   function bumpRage() {
     clearTimeout(rageDecayTimer);
@@ -532,20 +510,16 @@
     blob.classList.remove('grump');
     void blob.offsetWidth;
     blob.classList.add('grump');
-    blob.classList.add('annoyed');
-    clearTimeout(blob._annoyTimer);
-    blob._annoyTimer = setTimeout(() => blob.classList.remove('annoyed'), 900);
 
     burst(9 + rage * 2, 1 + rage * 0.08);   // 怒气越高，火花越多越大
     say(pickMessage());
     hint.style.opacity = '0';
-    rageMeter.classList.add('show');
   }
 
   /* ============ 暴走 ============ */
   function rampage() {
     rampaging = true;
-    setRage(0);
+    setRage(RAGE_MAX);            // 炸的时候，脸上得是最怒的样子
     blob.classList.add('rampage');
     stage.classList.add('rampage');
     starsWrap.classList.add('rampage');
@@ -557,6 +531,7 @@
       stage.classList.remove('rampage');
       starsWrap.classList.remove('rampage');
       flashEl.classList.remove('on');
+      setRage(0);                 // 炸完才消气
       rampaging = false;
     }, 1000);
   }
