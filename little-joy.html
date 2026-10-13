@@ -157,33 +157,51 @@
   }
   .hint b { color: #ffd479; font-weight: 600; }
 
-  /* 弹出的暖心话 */
+  /* 团子的定位容器（让气泡挂在它头顶） */
+  .blob-wrap { position: relative; }
+
+  /* 弹出的暖心话 —— 挂在团子头顶的对话气泡 */
   .message {
-    position: fixed;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(0.85);
-    max-width: 82vw;
-    padding: 26px 34px;
-    border-radius: 22px;
-    background: rgba(255, 250, 240, 0.97);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 24px);
+    transform: translateX(-50%) scale(0.8) translateY(10px);
+    width: max-content;
+    max-width: min(82vw, 520px);
+    padding: 22px 30px;
+    border-radius: 20px;
+    background: rgba(255, 250, 240, 0.98);
     color: #3a2f47;
-    font-size: clamp(18px, 2.4vw, 26px);
+    font-size: clamp(17px, 2.2vw, 24px);
     font-weight: 600;
     text-align: center;
     line-height: 1.7;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.5) inset;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.55) inset;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: 10;
   }
-  .message.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  /* 小尖角，指向下面的团子 */
+  .message::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    border: 13px solid transparent;
+    border-top-color: rgba(255, 250, 240, 0.98);
+    margin-top: -2px;
+  }
+  .message.show { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
 </style>
 </head>
 <body>
   <div class="stars" id="stars"></div>
 
   <div class="stage">
+   <div class="blob-wrap">
+    <div class="message" id="message"></div>
     <div class="blob" id="blob">
       <div class="eyes">
         <div class="eye"><div class="pupil"><div class="shine"></div></div></div>
@@ -194,10 +212,9 @@
       <div class="mouth"></div>
       <div class="shadow"></div>
     </div>
+   </div>
     <div class="hint" id="hint">它一直在 <b>看着你</b> 呢<br />点它一下试试 :)</div>
   </div>
-
-  <div class="message" id="message"></div>
 
 <script>
   const blob = document.getElementById('blob');
@@ -293,6 +310,11 @@
 
     hint.style.opacity = '0';
   }
+
+  /* 蹦一下结束后，把 hop 类摘掉，让团子继续慢慢漂浮 */
+  blob.addEventListener('animationend', (e) => {
+    if (e.animationName === 'hop') blob.classList.remove('hop');
+  });
 
   document.addEventListener('pointerdown', (e) => {
     // 避免点消息框时重复触发，其余任意处都可触发
