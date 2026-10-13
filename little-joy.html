@@ -33,17 +33,45 @@
     50%      { opacity: 0.45; }
   }
 
+  /* 暴走时的红光闪一下 */
+  .flash {
+    position: fixed; inset: 0; z-index: 20; pointer-events: none;
+    background: radial-gradient(circle at 50% 45%, rgba(255,70,70,0.5), rgba(255,60,60,0.05) 65%, transparent 80%);
+    opacity: 0;
+  }
+  .flash.on { animation: flashAnim 0.55s ease-out; }
+  @keyframes flashAnim { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+
   .stage {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 42px;
+    gap: 34px;
     z-index: 2;
+  }
+  /* 暴走时整块屏幕抖一下 */
+  .stage.rampage { animation: screenShake 0.55s ease-in-out; }
+  .stars.rampage { animation: screenShake 0.55s ease-in-out; }
+  @keyframes screenShake {
+    0%, 100% { transform: translate(0, 0); }
+    15% { transform: translate(-14px, 7px); }
+    32% { transform: translate(14px, -7px); }
+    50% { transform: translate(-11px, 5px); }
+    68% { transform: translate(10px, -4px); }
+    85% { transform: translate(-6px, 2px); }
+  }
+
+  /* 团子的定位容器：鼠标凑近会侧身躲，装睡会扭过去 */
+  .blob-wrap {
+    position: relative;
+    transition: transform 0.28s ease-out;
+    will-change: transform;
   }
 
   /* 小团子本体 —— 一脸不高兴的灰紫色 */
   .blob {
+    --rage: 0;
     position: relative;
     width: 200px;
     height: 180px;
@@ -57,6 +85,15 @@
     animation: idle-sway 4.4s ease-in-out infinite;
     transition: transform 0.15s ease-out;
     transform-origin: center bottom;
+  }
+  /* 怒气越高，脸越红 */
+  .rage-tint {
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at 50% 48%, rgba(232,70,70,0.95), rgba(196,40,40,0.55) 72%);
+    opacity: calc(var(--rage, 0) * 0.62);
+    pointer-events: none;
+    transition: opacity 0.3s ease;
   }
   /* 不耐烦的晃动，末尾还“哼”一下 */
   @keyframes idle-sway {
@@ -80,7 +117,18 @@
     100% { transform: translateY(0) rotate(0) scale(1, 1); }
   }
 
-  /* 眉毛：往中间压的倒八 */
+  /* 怒气满了：原地炸一下 */
+  .blob.rampage { animation: rampagePop 0.85s ease-in-out; }
+  @keyframes rampagePop {
+    0%   { transform: scale(1, 1) rotate(0); }
+    14%  { transform: scale(1.24, 1.16) rotate(-7deg); }
+    30%  { transform: scale(0.98, 1.05) rotate(7deg); }
+    46%  { transform: scale(1.18, 1.10) rotate(-6deg); }
+    62%  { transform: scale(1.0, 1.02) rotate(5deg); }
+    100% { transform: scale(1, 1) rotate(0); }
+  }
+
+  /* 眉毛：右眉压得低（生气），左眉挑起来（欠揍） */
   .brows { position: absolute; top: 44px; left: 0; width: 100%; }
   .brow {
     position: absolute;
@@ -89,10 +137,10 @@
     border-radius: 5px;
     transition: transform 0.15s ease;
   }
-  .brow.l { left: 44px;  transform: rotate(20deg); }
-  .brow.r { right: 44px; transform: rotate(-20deg); }
-  .blob.annoyed .brow.l { transform: rotate(30deg) translate(1px, 3px); }
-  .blob.annoyed .brow.r { transform: rotate(-30deg) translate(-1px, 3px); }
+  .brow.l { left: 44px;  transform: rotate(11deg) translateY(-5px); }
+  .brow.r { right: 44px; transform: rotate(-24deg); }
+  .blob.annoyed .brow.l { transform: rotate(16deg) translateY(-9px); }
+  .blob.annoyed .brow.r { transform: rotate(-32deg) translate(-1px, 3px); }
 
   /* 眼睛：半耷拉着，很不屑 */
   .eyes { position: absolute; top: 64px; left: 0; width: 100%; display: flex; justify-content: center; gap: 46px; }
@@ -104,7 +152,7 @@
     display: flex; align-items: flex-end; justify-content: center;
     padding-bottom: 1px;
     overflow: hidden;
-    transition: height 0.15s ease;
+    transition: height 0.15s ease, background 0.15s ease;
   }
   .pupil {
     width: 12px; height: 12px;
@@ -114,30 +162,54 @@
   }
   .blob.annoyed .eye { height: 13px; }
 
+  /* 翻白眼 / 打哈欠 */
+  .blob.yawning .pupil { transform: translateY(-7px) !important; }
+  .blob.yawning .eye { height: 22px; }
+
+  /* 装睡：眼睛闭成一条线 */
+  .blob.asleep .eye { height: 6px; border-radius: 20px; background: #2f2b40; }
+  .blob.asleep .pupil { opacity: 0; }
+  .blob.asleep .brow.l { transform: rotate(6deg) translateY(-1px); opacity: 0.55; }
+  .blob.asleep .brow.r { transform: rotate(-8deg); opacity: 0.55; }
+
   /* 头顶冒的火花 */
   .vein {
     position: absolute; top: 12px; right: 32px;
     width: 26px; height: 26px;
     opacity: 0.9;
-    animation: veinPulse 1.6s ease-in-out infinite;
+    animation: veinPulse calc(1.6s - var(--rage, 0) * 1.05s) ease-in-out infinite;
     transform-origin: center;
   }
   @keyframes veinPulse {
-    0%, 100% { transform: scale(1); opacity: 0.75; }
-    50%      { transform: scale(1.18); opacity: 1; }
+    0%, 100% { transform: scale(calc(1 + var(--rage, 0) * 0.35)); opacity: 0.72; }
+    50%      { transform: scale(calc(1.18 + var(--rage, 0) * 0.55)); opacity: 1; }
   }
-  .blob.annoyed .vein { animation-duration: 0.45s; }
 
-  /* 瘪着的嘴 */
+  /* 瘪着 / 斜着的嘴（一边高一边低，很欠揍） */
   .mouth {
-    position: absolute; left: 50%; top: 104px; transform: translateX(-50%);
-    width: 30px; height: 11px;
+    position: absolute; left: 50%; top: 104px;
+    transform: translateX(-50%) rotate(-9deg);
+    width: 32px; height: 11px;
     border: 3.5px solid #2f2b40;
     border-bottom: none;
     border-radius: 30px 30px 0 0;
     transition: all 0.15s ease;
   }
-  .blob.annoyed .mouth { width: 24px; height: 8px; border-width: 4.5px; }
+  .blob.annoyed .mouth { width: 26px; height: 8px; border-width: 4.5px; transform: translateX(-50%) rotate(-13deg); }
+  /* 打哈欠：张大嘴 */
+  .blob.yawning .mouth {
+    width: 20px; height: 24px;
+    border: 4px solid #2f2b40;
+    border-radius: 50% 50% 55% 55%;
+    transform: translateX(-50%) rotate(0deg);
+  }
+  /* 装睡：嘴抿成一条平线 */
+  .blob.asleep .mouth {
+    width: 18px; height: 0;
+    border: 0; border-top: 3.5px solid #2f2b40;
+    border-radius: 3px;
+    transform: translateX(-50%) rotate(0deg);
+  }
 
   /* 影子 */
   .shadow {
@@ -151,7 +223,7 @@
     50%      { transform: translateX(-50%) scale(0.9); opacity: 0.4; }
   }
 
-  /* 被点后往外蹦的不爽符号 */
+  /* 被点后往外蹦的火花 / 闷气 */
   .floaty-bit {
     position: absolute;
     pointer-events: none;
@@ -169,6 +241,22 @@
     100% { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(var(--rot)); opacity: 0; }
   }
 
+  /* 装睡时飘的 z */
+  .zzz {
+    position: absolute;
+    color: #cfd4ee;
+    font-weight: 700;
+    font-size: 18px;
+    pointer-events: none;
+    animation: zfloat 1.7s ease-out forwards;
+    will-change: transform, opacity;
+  }
+  @keyframes zfloat {
+    0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
+    20%  { opacity: 0.95; }
+    100% { transform: translate(34px, -78px) scale(1.25) rotate(8deg); opacity: 0; }
+  }
+
   /* 提示文字 */
   .hint {
     color: #b9bedd;
@@ -181,8 +269,27 @@
   }
   .hint b { color: #d98b8b; font-weight: 600; }
 
-  /* 团子的定位容器（让气泡挂在它头顶） */
-  .blob-wrap { position: relative; }
+  /* 怒气条 */
+  .rage-meter {
+    display: flex; align-items: center; gap: 10px;
+    opacity: 0; transform: translateY(-6px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .rage-meter.show { opacity: 1; transform: translateY(0); }
+  .rage-label { color: #d98b8b; font-size: 13px; letter-spacing: 3px; }
+  .rage-track {
+    width: 170px; height: 8px; border-radius: 8px;
+    background: rgba(255,255,255,0.12);
+    overflow: hidden;
+  }
+  .rage-fill {
+    height: 100%; width: 0%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #e0a24a, #e05252);
+    transition: width 0.3s ease;
+  }
+  .rage-meter.max .rage-track { animation: rageFlash 0.4s steps(2, end) 3; }
+  @keyframes rageFlash { 0% { background: rgba(255,255,255,0.12); } 100% { background: rgba(224,82,82,0.6); } }
 
   /* 弹出的没好气的话 —— 挂在团子头顶的对话气泡 */
   .message {
@@ -206,7 +313,6 @@
     transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
     z-index: 10;
   }
-  /* 小尖角，指向下面的团子 */
   .message::after {
     content: "";
     position: absolute;
@@ -222,11 +328,13 @@
 </head>
 <body>
   <div class="stars" id="stars"></div>
+  <div class="flash" id="flash"></div>
 
-  <div class="stage">
-   <div class="blob-wrap">
+  <div class="stage" id="stage">
+   <div class="blob-wrap" id="blobWrap">
     <div class="message" id="message"></div>
     <div class="blob" id="blob">
+      <div class="rage-tint"></div>
       <div class="brows">
         <div class="brow l"></div>
         <div class="brow r"></div>
@@ -250,13 +358,22 @@
     </div>
    </div>
     <div class="hint" id="hint">看什么看。<br />……别拿手指戳<b>我</b>。</div>
+    <div class="rage-meter" id="rageMeter">
+      <span class="rage-label">怒气</span>
+      <div class="rage-track"><div class="rage-fill" id="rageFill"></div></div>
+    </div>
   </div>
 
 <script>
   const blob = document.getElementById('blob');
+  const blobWrap = document.getElementById('blobWrap');
+  const stage = document.getElementById('stage');
   const hint = document.getElementById('hint');
   const messageEl = document.getElementById('message');
   const starsWrap = document.getElementById('stars');
+  const flashEl = document.getElementById('flash');
+  const rageMeter = document.getElementById('rageMeter');
+  const rageFill = document.getElementById('rageFill');
 
   /* —— 背景冷光点 —— */
   (function makeStars() {
@@ -274,40 +391,6 @@
     starsWrap.innerHTML = html;
   })();
 
-  /* —— 眼睛躲着鼠标：越靠近，越往旁边撇，还带点俯视 —— */
-  const pupils = document.querySelectorAll('.pupil');
-  document.addEventListener('mousemove', (e) => {
-    const rect = blob.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const ang = Math.atan2(e.clientY - cy, e.clientX - cx);
-    const dist = Math.min(7, Math.hypot(e.clientX - cx, e.clientY - cy) / 30);
-    // 往反方向躲，并稍稍往下看（不屑）
-    const x = -Math.cos(ang) * dist;
-    const y = -Math.sin(ang) * dist * 0.5 + 2;
-    pupils.forEach(p => { p.style.transform = `translate(${x}px, ${y}px)`; });
-  });
-
-  /* —— 没好气的话 —— */
-  const messages = [
-    "……干嘛。",
-    "不要碰我。",
-    "烦。",
-    "哼。",
-    "谁准你点我的。",
-    "我现在不想理任何人。",
-    "你怎么还没走。",
-    "再点一下试试看。",
-    "……哦。",
-    "无语。",
-    "就你事多。",
-    "离我远点。",
-    "手拿开。",
-    "你是闲得慌吗。"
-  ];
-  let lastIndex = -1;
-
-  /* —— 点一下，甩头冒火 —— */
   const SPARK = `<svg viewBox="0 0 40 40" width="100%" height="100%" fill="none"
       stroke="#e05252" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
       <line x1="20" y1="20" x2="20" y2="4"/>
@@ -317,69 +400,247 @@
       <line x1="20" y1="20" x2="7" y2="29"/>
       <line x1="20" y1="20" x2="7" y2="11"/>
     </svg>`;
+
+  /* ============ 状态 ============ */
+  const RAGE_MAX = 6;
+  let rage = 0;
+  let rageDecayTimer = null;
   let msgTimer = null;
+  let asleep = false;
+  let rampaging = false;
+  const clickTimes = [];
+  let idleTimer = null;
+  let zzzTimer = null;
+  const pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  let avoidRaf = null;
 
-  function grumpReaction() {
-    // 甩头摇头
-    blob.classList.remove('grump');
-    void blob.offsetWidth;
-    blob.classList.add('grump');
+  /* ============ 眼睛躲着鼠标 ============ */
+  const pupils = document.querySelectorAll('.pupil');
+  document.addEventListener('mousemove', (e) => {
+    pointer.x = e.clientX; pointer.y = e.clientY;
 
-    // 加深臭脸
-    blob.classList.add('annoyed');
-    clearTimeout(blob._annoyTimer);
-    blob._annoyTimer = setTimeout(() => blob.classList.remove('annoyed'), 900);
+    if (!asleep) {
+      const rect = blob.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const ang = Math.atan2(e.clientY - cy, e.clientX - cx);
+      const dist = Math.min(7, Math.hypot(e.clientX - cx, e.clientY - cy) / 30);
+      const x = -Math.cos(ang) * dist;              // 往反方向躲
+      const y = -Math.sin(ang) * dist * 0.5 + 2;    // 再稍稍往下看（不屑）
+      pupils.forEach(p => { p.style.transform = `translate(${x}px, ${y}px)`; });
+    }
 
-    // 往外蹦几个不爽符号
+    if (!avoidRaf) avoidRaf = requestAnimationFrame(updateAvoidance);
+    noteActivity();
+  });
+
+  /* 鼠标凑近就侧身躲开（位移挂在 blobWrap 上，避开本体的动画） */
+  function updateAvoidance() {
+    avoidRaf = null;
+    if (asleep || rampaging) return;
+    const sRect = stage.getBoundingClientRect();
+    const ax = sRect.left + blobWrap.offsetLeft + blobWrap.offsetWidth / 2;
+    const ay = sRect.top + blobWrap.offsetTop + blobWrap.offsetHeight / 2;
+    const dx = pointer.x - ax;
+    const dy = pointer.y - ay;
+    const d = Math.hypot(dx, dy);
+    const R = 200;
+    if (d < R && d > 0.5) {
+      const s = (R - d) / R;                        // 0..1
+      const ox = -(dx / d) * s * 26;
+      const oy = -(dy / d) * s * 16;
+      const rot = -(dx / d) * s * 5;
+      blobWrap.style.transform = `translate(${ox}px, ${oy}px) rotate(${rot}deg)`;
+    } else {
+      blobWrap.style.transform = '';
+    }
+  }
+  window.addEventListener('resize', () => { if (avoidRaf) cancelAnimationFrame(avoidRaf); avoidRaf = requestAnimationFrame(updateAvoidance); });
+
+  /* ============ 气泡 ============ */
+  function say(text, dur = 2000) {
+    messageEl.textContent = text;
+    messageEl.classList.add('show');
+    clearTimeout(msgTimer);
+    msgTimer = setTimeout(() => messageEl.classList.remove('show'), dur);
+  }
+
+  /* ============ 火花迸发 ============ */
+  function burst(count, power = 1) {
     const rect = blob.getBoundingClientRect();
-    const originX = rect.left + rect.width / 2;
-    const originY = rect.top + rect.height / 2;
-    for (let i = 0; i < 9; i++) {
+    const ox = rect.left + rect.width / 2;
+    const oy = rect.top + rect.height / 2;
+    for (let i = 0; i < count; i++) {
       const bit = document.createElement('div');
       bit.className = 'floaty-bit';
-      bit.innerHTML = Math.random() < 0.7 ? SPARK : '<div class="puff"></div>';
-      const sz = 14 + Math.random() * 14;
+      bit.innerHTML = Math.random() < 0.72 ? SPARK : '<div class="puff"></div>';
+      const sz = (14 + Math.random() * 14) * power;
       bit.style.width = sz + 'px';
       bit.style.height = sz + 'px';
-      bit.style.left = (originX + (Math.random() - 0.5) * 90) + 'px';
-      bit.style.top  = (originY + (Math.random() - 0.5) * 60) + 'px';
-      bit.style.setProperty('--dx', ((Math.random() - 0.5) * 220).toFixed(0) + 'px');
-      bit.style.setProperty('--dy', (-30 - Math.random() * 90).toFixed(0) + 'px');
+      bit.style.left = (ox + (Math.random() - 0.5) * 90) + 'px';
+      bit.style.top  = (oy + (Math.random() - 0.5) * 60) + 'px';
+      bit.style.setProperty('--dx', ((Math.random() - 0.5) * 220 * power).toFixed(0) + 'px');
+      bit.style.setProperty('--dy', (-30 - Math.random() * 90 * power).toFixed(0) + 'px');
       bit.style.setProperty('--rot', ((Math.random() - 0.5) * 160).toFixed(0) + 'deg');
       document.body.appendChild(bit);
       setTimeout(() => bit.remove(), 1000);
     }
-
-    // 甩一句没好气的话
-    let idx;
-    do { idx = Math.floor(Math.random() * messages.length); }
-    while (idx === lastIndex && messages.length > 1);
-    lastIndex = idx;
-
-    messageEl.textContent = messages[idx];
-    messageEl.classList.add('show');
-    clearTimeout(msgTimer);
-    msgTimer = setTimeout(() => messageEl.classList.remove('show'), 2000);
-
-    hint.style.opacity = '0';
   }
 
-  /* 甩完头，恢复继续不耐烦地晃 */
+  /* ============ 怒气 ============ */
+  function setRage(r) {
+    rage = Math.max(0, Math.min(RAGE_MAX, r));
+    const ratio = rage / RAGE_MAX;
+    blob.style.setProperty('--rage', ratio.toFixed(3));
+    rageFill.style.width = (ratio * 100) + '%';
+    rageMeter.classList.toggle('max', rage >= RAGE_MAX);
+  }
+  function bumpRage() {
+    clearTimeout(rageDecayTimer);
+    setRage(rage + 1);
+    scheduleDecay();
+  }
+  function scheduleDecay() {
+    rageDecayTimer = setTimeout(() => {
+      if (asleep || rampaging) { scheduleDecay(); return; }
+      if (rage > 0) { setRage(rage - 1); scheduleDecay(); }
+    }, 1500);
+  }
+
+  /* ============ 没好气的话（按怒气分级） ============ */
+  const MSG = {
+    low:  ["……干嘛。", "不要碰我。", "手拿开。", "烦。", "哼。", "谁准你点我的。"],
+    mid:  ["你怎么还没走。", "就你事多。", "你是闲得慌吗。", "……哦。", "无语。", "再点一下试试看。"],
+    high: ["……我真服了。", "别逼我。", "你够了没。", "最后一次警告。", "手是不是不想要了。"]
+  };
+  const RAMPAGE_LINES = ["够了！！", "你再碰一下试试！！", "我受够了！！", "烦死了！！！"];
+
+  let lastTier = '';
+  let lastMsgIdx = -1;
+  function pickMessage() {
+    const tier = rage <= 2 ? 'low' : (rage <= 4 ? 'mid' : 'high');
+    const arr = MSG[tier];
+    let i;
+    do { i = Math.floor(Math.random() * arr.length); }
+    while (arr.length > 1 && tier === lastTier && i === lastMsgIdx);
+    lastTier = tier; lastMsgIdx = i;
+    return arr[i];
+  }
+
+  /* ============ 被点一下：甩头 + 冒火 ============ */
+  function react() {
+    blob.classList.remove('grump');
+    void blob.offsetWidth;
+    blob.classList.add('grump');
+    blob.classList.add('annoyed');
+    clearTimeout(blob._annoyTimer);
+    blob._annoyTimer = setTimeout(() => blob.classList.remove('annoyed'), 900);
+
+    burst(9 + rage * 2, 1 + rage * 0.08);   // 怒气越高，火花越多越大
+    say(pickMessage());
+    hint.style.opacity = '0';
+    rageMeter.classList.add('show');
+  }
+
+  /* ============ 暴走 ============ */
+  function rampage() {
+    rampaging = true;
+    setRage(0);
+    blob.classList.add('rampage');
+    stage.classList.add('rampage');
+    starsWrap.classList.add('rampage');
+    flashEl.classList.add('on');
+    burst(42, 1.5);
+    say(RAMPAGE_LINES[Math.floor(Math.random() * RAMPAGE_LINES.length)], 2400);
+    setTimeout(() => {
+      blob.classList.remove('rampage');
+      stage.classList.remove('rampage');
+      starsWrap.classList.remove('rampage');
+      flashEl.classList.remove('on');
+      rampaging = false;
+    }, 1000);
+  }
+
+  /* ============ 装睡（连点太多就扭头不理你） ============ */
+  function sleepy() {
+    asleep = true;
+    clickTimes.length = 0;
+    setRage(0);
+    messageEl.classList.remove('show');
+    blob.classList.add('asleep');
+    blobWrap.style.transform = 'rotate(-24deg) translateX(-8px)';
+    spawnZ();
+    zzzTimer = setInterval(spawnZ, 620);
+    setTimeout(wake, 4200);
+  }
+  function wake() {
+    clearInterval(zzzTimer);
+    asleep = false;
+    blob.classList.remove('asleep');
+    blobWrap.style.transform = '';
+    say("……哼。", 1400);
+  }
+  function spawnZ() {
+    const rect = blob.getBoundingClientRect();
+    const z = document.createElement('div');
+    z.className = 'zzz';
+    z.textContent = 'z';
+    z.style.left = (rect.left + rect.width * 0.66) + 'px';
+    z.style.top  = (rect.top + rect.height * 0.16) + 'px';
+    z.style.fontSize = (14 + Math.random() * 8).toFixed(0) + 'px';
+    document.body.appendChild(z);
+    setTimeout(() => z.remove(), 1800);
+  }
+
+  /* ============ 不理它就翻白眼 / 打哈欠 ============ */
+  function noteActivity() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(yawn, 6500);
+  }
+  function yawn() {
+    if (asleep || rampaging) { noteActivity(); return; }
+    blob.classList.add('yawning');
+    setTimeout(() => {
+      blob.classList.remove('yawning');
+      noteActivity();
+    }, 1500);
+  }
+
+  /* ============ 交互 ============ */
+  document.addEventListener('pointerdown', () => {
+    if (asleep) return;                 // 装睡时装听不见
+    noteActivity();
+
+    // 连点检测
+    const now = performance.now();
+    clickTimes.push(now);
+    while (clickTimes.length && now - clickTimes[0] > 2500) clickTimes.shift();
+    if (clickTimes.length >= 7) { sleepy(); return; }
+
+    // 先涨怒气，这一句才配得上当前的怒气档位
+    const willMax = rage + 1 >= RAGE_MAX;
+    bumpRage();
+    react();
+    if (willMax) rampage();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'Enter') {
+      e.preventDefault();
+      if (asleep) return;
+      noteActivity();
+      const willMax = rage + 1 >= RAGE_MAX;
+      bumpRage();
+      react();
+      if (willMax) rampage();
+    }
+  });
+
   blob.addEventListener('animationend', (e) => {
     if (e.animationName === 'grump') blob.classList.remove('grump');
   });
 
-  document.addEventListener('pointerdown', (e) => {
-    grumpReaction();
-  });
-
-  // 键盘空格 / 回车也能惹它烦
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.code === 'Enter') {
-      e.preventDefault();
-      grumpReaction();
-    }
-  });
+  noteActivity();
 </script>
 </body>
 </html>
