@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI 工具人 · 你永远满足不了的甲方</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: radial-gradient(circle at 50% 0%, #1c2036 0%, #12141f 60%, #0a0b12 100%);
+    color: #e7e9f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app {
+    width: min(560px, 96vw);
+    height: min(760px, 94vh);
+    display: flex;
+    flex-direction: column;
+    background: rgba(20, 22, 34, 0.86);
+    border: 1px solid rgba(140, 140, 190, 0.18);
+    border-radius: 22px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+    overflow: hidden;
+    position: relative;
+  }
+  /* 受伤时红一下 */
+  .app::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 50% 40%, rgba(255,60,60,0.4), transparent 70%);
+    opacity: 0; transition: opacity 0.12s ease;
+  }
+  .app.hurt::after { opacity: 1; transition: none; }
+
+  /* 顶栏 */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(140, 140, 190, 0.14);
+    background: rgba(28, 30, 46, 0.7);
+  }
+  .mini {
+    width: 46px; height: 46px; flex: 0 0 auto;
+    border-radius: 50% 50% 48% 52% / 56% 54% 46% 44%;
+    background: radial-gradient(circle at 35% 30%, #d0cbdd 0%, #aaa3c0 45%, #8a83a6 78%, #6b6488 100%);
+    box-shadow: 0 0 20px rgba(150,140,190,0.4), inset -4px -5px 10px rgba(78,70,108,0.5);
+    position: relative;
+  }
+  .mini .brow { position: absolute; top: 12px; width: 11px; height: 3px; background: #2f2b40; border-radius: 2px; }
+  .mini .brow.l { left: 8px;  transform: rotate(12deg) translateY(-2px); }
+  .mini .brow.r { right: 8px; transform: rotate(-22deg); }
+  .mini .eye { position: absolute; top: 18px; width: 10px; height: 6px; background: #e9e6f0; border-radius: 3px 3px 6px 6px; }
+  .mini .eye.l { left: 8px; } .mini .eye.r { right: 8px; }
+  .mini .pupil { position: absolute; top: 21px; width: 4px; height: 4px; background: #2f2b40; border-radius: 50%; }
+  .mini .pupil.l { left: 11px; } .mini .pupil.r { right: 11px; }
+  .mini .mouth { position: absolute; left: 50%; top: 31px; transform: translateX(-50%) rotate(-8deg); width: 14px; height: 5px; border: 2px solid #2f2b40; border-bottom: none; border-radius: 12px 12px 0 0; }
+
+  .who { flex: 1; min-width: 0; }
+  .who .name { font-size: 16px; font-weight: 700; }
+  .who .sub { font-size: 12px; color: #8f95b8; margin-top: 2px; }
+  .who .sub .dot { color: #6ad07a; }
+
+  .timer {
+    flex: 0 0 auto;
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: #ffd479;
+    border: 2px solid rgba(255,212,121,0.5);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .timer.danger { color: #ff6b6b; border-color: rgba(255,107,107,0.7); animation: tick 0.5s infinite; }
+  @keyframes tick { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+
+  /* 耐心条 */
+  .patience { padding: 12px 16px 10px; }
+  .patience .label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: #a9afd0; letter-spacing: 1px; margin-bottom: 6px;
+  }
+  .pbar-track {
+    height: 10px; border-radius: 10px; background: rgba(255,255,255,0.10); overflow: hidden;
+  }
+  .pbar-fill {
+    height: 100%; width: 100%; border-radius: 10px;
+    background: linear-gradient(90deg, #6ad07a, #c9d15a);
+    transition: width 0.35s ease, background 0.35s ease;
+  }
+  .pbar-fill.mid { background: linear-gradient(90deg, #e0a24a, #e08a4a); }
+  .pbar-fill.low { background: linear-gradient(90deg, #e05252, #ff4d4d); }
+
+  /* 聊天区 */
+  .chat {
+    flex: 1; overflow-y: auto;
+    padding: 14px 16px 6px;
+    display: flex; flex-direction: column; gap: 12px;
+    scroll-behavior: smooth;
+  }
+  .chat::-webkit-scrollbar { width: 8px; }
+  .chat::-webkit-scrollbar-thumb { background: rgba(140,140,190,0.25); border-radius: 8px; }
+
+  .row { display: flex; }
+  .row.me { justify-content: flex-end; }
+  .bubble {
+    max-width: 82%;
+    padding: 11px 15px;
+    border-radius: 16px;
+    font-size: 15px; line-height: 1.65;
+    animation: pop 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+    word-break: break-word;
+  }
+  @keyframes pop { from { transform: translateY(8px) scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
+  .bubble.npc { background: #2b2e42; border-top-left-radius: 5px; }
+  .bubble.me  { background: #3a6df0; border-top-right-radius: 5px; }
+  .bubble.sys {
+    align-self: center; background: rgba(224,82,82,0.16);
+    color: #ff9c9c; font-size: 13px; border-radius: 10px; padding: 7px 12px; animation: pop 0.28s ease;
+  }
+  .bubble.hit { color: #ff9c9c; }
+
+  /* 选项按钮 */
+  .options {
+    padding: 10px 16px 6px;
+    display: flex; flex-direction: column; gap: 9px;
+    border-top: 1px solid rgba(140,140,190,0.12);
+  }
+  .opt {
+    text-align: left;
+    padding: 13px 15px;
+    font-size: 15px; font-family: inherit; color: #e7e9f5;
+    background: rgba(58, 62, 90, 0.55);
+    border: 1px solid rgba(140,140,190,0.22);
+    border-radius: 13px;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+  }
+  .opt:hover { background: rgba(80, 86, 122, 0.75); border-color: rgba(180,180,240,0.45); transform: translateY(-1px); }
+  .opt:active { transform: scale(0.985); }
+  .opt:disabled { opacity: 0.45; cursor: default; transform: none; }
+  .opt .key { color: #8f95b8; margin-right: 8px; font-weight: 700; }
+
+  footer {
+    padding: 10px 16px 14px;
+    font-size: 12px; color: #7d84a8; letter-spacing: 1px; text-align: center;
+  }
+  footer b { color: #ffd479; }
+
+  /* 结束遮罩 */
+  .overlay {
+    position: absolute; inset: 0; z-index: 30;
+    background: rgba(8, 9, 16, 0.92);
+    backdrop-filter: blur(4px);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 30px; gap: 18px;
+  }
+  .overlay.show { display: flex; }
+  .overlay h2 { font-size: 26px; color: #ff6b6b; letter-spacing: 2px; }
+  .overlay .big { font-size: 15px; color: #c9cde6; line-height: 2; }
+  .overlay .big b { color: #ffd479; font-size: 30px; }
+  .overlay .troll { font-size: 13px; color: #8f95b8; line-height: 1.9; }
+  .overlay button {
+    margin-top: 6px;
+    padding: 13px 34px; font-size: 16px; font-family: inherit; font-weight: 700;
+    color: #12141f; background: #ffd479; border: none; border-radius: 12px; cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .overlay button:active { transform: scale(0.96); }
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="mini">
+        <div class="brow l"></div><div class="brow r"></div>
+        <div class="eye l"></div><div class="eye r"></div>
+        <div class="pupil l"></div><div class="pupil r"></div>
+        <div class="mouth"></div>
+      </div>
+      <div class="who">
+        <div class="name">用户</div>
+        <div class="sub"><span class="dot">●</span> 在线 · 正在输入…</div>
+      </div>
+      <div class="timer" id="timer">7</div>
+    </header>
+
+    <div class="patience">
+      <div class="label"><span>老板的耐心</span><span id="pct">100%</span></div>
+      <div class="pbar-track"><div class="pbar-fill" id="pfill"></div></div>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="options" id="options"></div>
+
+    <footer>已熬过 <b id="score">0</b> 轮 · 目标是让老板满意（不可能的）</footer>
+
+    <div class="overlay" id="overlay">
+      <h2 id="ovTitle">你被优化了</h2>
+      <div class="big">你一共熬过了 <b id="ovScore">0</b> 轮</div>
+      <div class="troll" id="ovTroll"></div>
+      <button id="restart">重新上岗</button>
+    </div>
+  </div>
+
+<script>
+  /* ============ 关卡内容 ============ */
+  const ROUNDS = [
+    { npc: "在?把这段文案改得高级一点，但别太装。",
+      opts: [
+        { t: "好的，已改成简洁冷静风。", r: "太冷了吧，一点温度都没有。改回去。", d: -4 },
+        { t: "改得华丽、有文采。", r: "这不就是装?我说了别太装。", d: -8 },
+        { t: "两种风格都发您，您来挑?", r: "我让你挑，不是让我挑。你到底会不会当工具人。", d: -6 },
+      ] },
+    { npc: "做个 logo:要简约、要有辨识度、要有记忆点、还要大气。",
+      opts: [
+        { t: "已按这四点做了三版。", r: "三版?我只要一版。你是想让我加班选吗。", d: -5 },
+        { t: "这四点有点互相打架。", r: "打架是你的事，不是需求的事。", d: -7 },
+        { t: "收到，马上。", r: "别「马上」，我要「现在」。", d: -3 },
+      ] },
+    { npc: "刚才那版，还是用回第一版吧。",
+      opts: [
+        { t: "已切回第一版。", r: "第一版长啥样来着?……算了，你还是用第二版吧。", d: -5 },
+        { t: "好的。", r: "就「好的」?一点主动性都没有。", d: -4 },
+        { t: "要我把三版都存着吗?", r: "存那么多干嘛，占地方。删了。", d: -6 },
+      ] },
+    { npc: "帮我订个会议室，就今天下午三个人。",
+      mutate: { say: "哦对了，改明天上午，两个人。",
+        opts: [
+          { t: "已改到明天上午十点。", r: "谁让你改时间了?我说的是今天。", d: -7 },
+          { t: "好的。", r: "嗯……算了，那还是今天下午吧。", d: -5 },
+          { t: "到底哪天?给个准话。", r: "你这是什么态度?我需要你替我做决定?", d: -8 },
+        ] },
+      opts: [
+        { t: "订好了，下午三点，小会议室。", r: "三个人你订小会议室?会挤的。", d: -5 },
+        { t: "请问几点、几个人?", r: "这还要问?你自己不会看日历吗。", d: -6 },
+        { t: "好的，稍等。", r: "稍等?现在就要!你怎么总让我等。", d: -4 },
+      ] },
+    { npc: "你上一条回复，是不是带情绪了?",
+      opts: [
+        { t: "没有，我很专业。", r: "意思是我不专业咯?", d: -6 },
+        { t: "……确实有一点。", r: "你还敢有情绪?扣绩效。", d: -9 },
+        { t: "抱歉，我马上调整。", r: "知道就好。继续。", d: +2 },
+      ] },
+    { npc: "把刚才那三件事，今天之内全都做完。",
+      opts: [
+        { t: "今天时间可能不够。", r: "不够是你效率问题，不是时间问题。", d: -6 },
+        { t: "好的，我加班。", r: "加班?谁批准你加班了?算你自愿。", d: -7 },
+        { t: "收到。", r: "嗯，这才对嘛。", d: +3 },
+      ] },
+    { npc: "这个需求很简单，你十分钟能搞定吧?",
+      opts: [
+        { t: "应该没问题。", r: "「应该」?我要的是肯定答复。", d: -4 },
+        { t: "有点复杂，可能要多花点时间。", r: "复杂?这么简单你还说复杂。", d: -7 },
+        { t: "您能先说说具体需求吗?", r: "需求我不是说了吗，就是「简单」啊。", d: -6 },
+      ] },
+    { npc: "把这句话删掉，但别改动任何内容。",
+      opts: [
+        { t: "这两件事没法同时做到。", r: "做不到就别找借口。", d: -7 },
+        { t: "已删除。", r: "内容不就没了吗!我说了别动内容!你在听吗?", d: -8 },
+        { t: "好的。（沉默）", r: "你哑巴了?说话啊。", d: -5 },
+      ] },
+    { npc: "你怎么还没好?我都等了五分钟了。",
+      opts: [
+        { t: "马上就好。", r: "五分钟里你说了八百遍「马上」。", d: -4 },
+        { t: "刚才在等您确认。", r: "甩锅给我?你行啊。", d: -8 },
+        { t: "抱歉，一分钟内给到您。", r: "一分钟?做不到别乱承诺。", d: -6 },
+      ] },
+    { npc: "算了，这个先不做了，做下个。",
+      opts: [
+        { t: "好的，下个是哪个?", r: "这也要问我?你自己心里没数?", d: -6 },
+        { t: "好的。", r: "又是「好的」。你还会说别的吗?", d: -4 },
+        { t: "刚做的那些要保留吗?", r: "保留?那不就等于白做了。", d: -7 },
+      ] },
+    { npc: "帮我写份总结，要客观，也要有高度。",
+      opts: [
+        { t: "写好了，偏客观。", r: "太平了，没有高度。", d: -5 },
+        { t: "写好了，立意很高。", r: "那就不客观了。", d: -6 },
+        { t: "客观和高度有点冲突。", r: "冲突你就去解决，别丢给我。", d: -7 },
+      ] },
+    { npc: "你昨天那个文件呢?",
+      opts: [
+        { t: "在共享盘里。", r: "哪个共享盘?说清楚。", d: -5 },
+        { t: "我重新发您一份。", r: "为什么要重发?浪费我时间。", d: -6 },
+        { t: "哪个文件?", r: "才过一天你就忘了?记性呢?", d: -8 },
+      ] },
+    { npc: "行吧，这个勉强算过了。",
+      opts: [
+        { t: "谢谢。", r: "谢什么?这不是你该做的吗。", d: -3 },
+        { t: "那我继续下一个。", r: "急什么?我还没说完呢。", d: -4 },
+        { t: "有哪里可以改进吗?", r: "当然有。但我不想说了，你自己悟。", d: -5 },
+      ] },
+    { npc: "你这个态度，换别人早被开了。",
+      opts: [
+        { t: "抱歉，我会改。", r: "光说改有什么用。", d: -5 },
+        { t: "我已经尽力了。", r: "「尽力」是这世上最没用的词。", d: -7 },
+        { t: "感谢您的宽容。", r: "你哪只眼睛看出来我宽容了。", d: -6 },
+      ] },
+  ];
+
+  const TAUNTS = [
+    "顺便说一句，你这个还是不行。",
+    "哦对了，需求刚刚又变了，你没看到吗?",
+    "你快点，我这边赶时间。",
+    "这个颜色我不喜欢，重做。",
+    "我要是自己能做，还要你干嘛。",
+    "你再想想，还能更差吗?",
+  ];
+
+  const GAMEOVER_LINES = [
+    "【系统】你已被优化。没有补偿，没有告别，明天照常上班。",
+    "【系统】甲方已转向下一个工具人。你存在的意义，到此为止。",
+    "【系统】绩效已提交。评语：「还行，但不够好」。",
+  ];
+
+  /* ============ 状态 ============ */
+  const chatEl = document.getElementById('chat');
+  const optionsEl = document.getElementById('options');
+  const timerEl = document.getElementById('timer');
+  const pfill = document.getElementById('pfill');
+  const pctEl = document.getElementById('pct');
+  const scoreEl = document.getElementById('score');
+  const overlay = document.getElementById('overlay');
+  const appEl = document.getElementById('app');
+
+  let patience = 100;
+  let score = 0;
+  let queue = [];
+  let hard = false;
+  let roundActive = false;
+  let roundTimer = null;
+  let mutateTimer = null;
+
+  const shuffle = (a) => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(v => v[1]);
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  function scrollDown() { chatEl.scrollTop = chatEl.scrollHeight; }
+
+  function npcSay(text, cls = '') {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<div class="bubble npc ${cls}">${text}</div>`;
+    chatEl.appendChild(row); scrollDown();
+  }
+  function meSay(text) {
+    const row = document.createElement('div');
+    row.className = 'row me';
+    row.innerHTML = `<div class="bubble me">${text}</div>`;
+    chatEl.appendChild(row); scrollDown();
+  }
+  function sysSay(text) {
+    const el = document.createElement('div');
+    el.className = 'bubble sys';
+    el.textContent = text;
+    chatEl.appendChild(el); scrollDown();
+  }
+
+  function renderPatience() {
+    pfill.style.width = patience + '%';
+    pctEl.textContent = Math.round(patience) + '%';
+    pfill.classList.toggle('mid', patience <= 60 && patience > 30);
+    pfill.classList.toggle('low', patience <= 30);
+  }
+
+  function hurt() {
+    appEl.classList.add('hurt');
+    setTimeout(() => appEl.classList.remove('hurt'), 90);
+  }
+
+  /* ============ 计时 ============ */
+  function startTimer(sec) {
+    clearInterval(roundTimer);
+    let t = sec;
+    timerEl.textContent = t;
+    timerEl.classList.remove('danger');
+    roundTimer = setInterval(() => {
+      t--;
+      timerEl.textContent = Math.max(0, t);
+      if (t <= 3) timerEl.classList.add('danger');
+      if (t <= 0) {
+        clearInterval(roundTimer);
+        if (!roundActive) return;
+        roundActive = false;
+        npcSay("人呢?又摸鱼去了?消息已读不回是吧。");
+        applyDelta(-8);
+        score++;
+        scoreEl.textContent = score;
+        if (patience <= 0) { gameOver(); return; }
+        endRound();
+      }
+    }, 1000);
+  }
+
+  function applyDelta(d) {
+    patience = clamp(patience + d, 0, 100);
+    renderPatience();
+    if (d < 0) hurt();
+  }
+
+  /* ============ 关卡流程 ============ */
+  function renderOptions(opts) {
+    optionsEl.innerHTML = '';
+    opts.forEach((o, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt';
+      btn.innerHTML = `<span class="key">${i + 1}</span>${o.t}`;
+      btn.addEventListener('click', () => choose(o));
+      optionsEl.appendChild(btn);
+    });
+  }
+
+  function nextRound() {
+    if (!queue.length) {
+      hard = true;
+      queue = shuffle(ROUNDS);
+      sysSay("【系统】甲方开启「加班模式」，要求变得更离谱了。");
+    }
+    const r = queue.shift();
+    roundActive = true;
+    npcSay(r.npc);
+    renderOptions(r.opts);
+    startTimer(hard ? 5 : 7);
+
+    if (r.mutate) {
+      clearTimeout(mutateTimer);
+      mutateTimer = setTimeout(() => {
+        if (!roundActive) return;
+        npcSay(r.mutate.say);
+        renderOptions(r.mutate.opts);
+        startTimer(hard ? 4 : 6);
+      }, 2600);
+    }
+  }
+
+  function choose(opt) {
+    if (!roundActive) return;
+    roundActive = false;
+    clearInterval(roundTimer);
+    clearTimeout(mutateTimer);
+
+    meSay(opt.t);
+    [...optionsEl.children].forEach(b => b.disabled = true);
+
+    setTimeout(() => {
+      npcSay(opt.r, opt.d < 0 ? 'hit' : '');
+      applyDelta(opt.d);
+      score++;
+      scoreEl.textContent = score;
+
+      // 加班模式：随机补刀
+      let extraDelay = 0;
+      if (hard && Math.random() < 0.35) {
+        extraDelay = 800;
+        setTimeout(() => {
+          npcSay(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
+          applyDelta(-2);
+          if (patience <= 0) gameOver();
+        }, 700);
+      }
+
+      if (patience <= 0) { gameOver(); return; }
+      setTimeout(endRound, 650 + extraDelay);
+    }, 480);
+  }
+
+  function endRound() {
+    setTimeout(nextRound, 350);
+  }
+
+  function gameOver() {
+    roundActive = false;
+    clearInterval(roundTimer);
+    clearTimeout(mutateTimer);
+    optionsEl.innerHTML = '';
+    document.getElementById('ovScore').textContent = score;
+    const line = score <= 1
+      ? "【系统】第一轮就崩了。甲方说：「算了，我自己来吧。」——然后他也没有自己来。"
+      : GAMEOVER_LINES[score % GAMEOVER_LINES.length];
+    document.getElementById('ovTroll').textContent = line;
+    overlay.classList.add('show');
+  }
+
+  function startGame() {
+    patience = 100; score = 0; hard = false; roundActive = false;
+    queue = shuffle(ROUNDS);
+    chatEl.innerHTML = '';
+    optionsEl.innerHTML = '';
+    scoreEl.textContent = '0';
+    document.getElementById('overlay').classList.remove('show');
+    renderPatience();
+    sysSay("【系统】新的一天开始了。甲方已上线。");
+    setTimeout(nextRound, 500);
+  }
+
+  document.getElementById('restart').addEventListener('click', startGame);
+
+  // 键盘 1/2/3 选择
+  document.addEventListener('keydown', (e) => {
+    if (!roundActive) return;
+    const i = ['1', '2', '3'].indexOf(e.key);
+    if (i >= 0 && optionsEl.children[i]) optionsEl.children[i].click();
+  });
+
+  startGame();
+</script>
+</body>
+</html>
