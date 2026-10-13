@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>小团子 · 一点小小的快乐</title>
+<title>小团子 · 谁都别惹我</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; overflow: hidden; }
   body {
     font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-    background: radial-gradient(circle at 50% 30%, #1b2340 0%, #0e1124 55%, #07080f 100%);
+    background: radial-gradient(circle at 50% 30%, #232538 0%, #141522 55%, #0a0a11 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -18,19 +18,19 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* 背景里缓缓漂动的光点 */
+  /* 背景里冷冷的光点，懒得闪 */
   .stars { position: fixed; inset: 0; pointer-events: none; }
   .star {
     position: absolute;
     border-radius: 50%;
-    background: #fff;
-    animation: twinkle var(--dur, 4s) ease-in-out infinite;
+    background: #aeb6d4;
+    animation: twinkle var(--dur, 6s) ease-in-out infinite;
     animation-delay: var(--delay, 0s);
-    opacity: 0.5;
+    opacity: 0.35;
   }
   @keyframes twinkle {
-    0%, 100% { opacity: 0.15; transform: scale(0.7); }
-    50%      { opacity: 0.9;  transform: scale(1.15); }
+    0%, 100% { opacity: 0.08; }
+    50%      { opacity: 0.45; }
   }
 
   .stage {
@@ -42,112 +42,136 @@
     z-index: 2;
   }
 
-  /* 小团子本体 */
+  /* 小团子本体 —— 一脸不高兴的灰紫色 */
   .blob {
     position: relative;
     width: 200px;
     height: 180px;
     border-radius: 50% 50% 48% 52% / 56% 54% 46% 44%;
-    background: radial-gradient(circle at 35% 30%, #ffe6a7 0%, #ffcf6b 40%, #ff9f68 78%, #f47b6b 100%);
+    background: radial-gradient(circle at 35% 30%, #d0cbdd 0%, #aaa3c0 45%, #8a83a6 80%, #6b6488 100%);
     box-shadow:
-      0 0 60px rgba(255, 176, 108, 0.55),
-      0 0 120px rgba(255, 140, 120, 0.30),
-      inset -18px -22px 40px rgba(214, 92, 84, 0.45),
-      inset 18px 20px 40px rgba(255, 255, 255, 0.55);
-    animation: floaty 3.6s ease-in-out infinite;
-    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+      0 0 48px rgba(140, 130, 180, 0.30),
+      0 0 100px rgba(110, 100, 155, 0.16),
+      inset -16px -20px 38px rgba(78, 70, 108, 0.42),
+      inset 16px 18px 38px rgba(255, 255, 255, 0.32);
+    animation: idle-sway 4.4s ease-in-out infinite;
+    transition: transform 0.15s ease-out;
     transform-origin: center bottom;
   }
-  @keyframes floaty {
-    0%, 100% { transform: translateY(0) rotate(-1.5deg); }
-    50%      { transform: translateY(-16px) rotate(1.5deg); }
-  }
-  .blob.hop { animation: hop 0.6s cubic-bezier(0.28, 1.5, 0.5, 1); }
-  @keyframes hop {
-    0%   { transform: translateY(0) scale(1, 1); }
-    25%  { transform: translateY(0) scale(1.18, 0.82); }
-    50%  { transform: translateY(-58px) scale(0.92, 1.12); }
-    75%  { transform: translateY(0) scale(1.12, 0.88); }
-    100% { transform: translateY(0) scale(1, 1); }
+  /* 不耐烦的晃动，末尾还“哼”一下 */
+  @keyframes idle-sway {
+    0%   { transform: translateY(0) rotate(-1deg) scale(1, 1); }
+    35%  { transform: translateY(-7px) rotate(1.2deg) scale(1.01, 0.99); }
+    55%  { transform: translateY(0) rotate(-0.6deg) scale(1, 1); }
+    70%  { transform: translateY(0) rotate(0.4deg) scale(1.05, 0.95); }
+    78%  { transform: translateY(0) rotate(-0.4deg) scale(0.99, 1.01); }
+    100% { transform: translateY(0) rotate(-1deg) scale(1, 1); }
   }
 
-  /* 眼睛 */
-  .eyes { position: absolute; top: 58px; left: 0; width: 100%; display: flex; justify-content: center; gap: 46px; }
+  /* 被点：一整个不爽，甩头摇头 */
+  .blob.grump { animation: grump 0.62s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  @keyframes grump {
+    0%   { transform: translateY(0) rotate(0) scale(1, 1); }
+    12%  { transform: translateY(0) rotate(0) scale(1.12, 0.88); }
+    28%  { transform: translate(-12px, 3px) rotate(-9deg) scale(1.02, 0.98); }
+    46%  { transform: translate(12px, 3px) rotate(9deg) scale(1.02, 0.98); }
+    64%  { transform: translate(-9px, 2px) rotate(-6deg) scale(1.01, 0.99); }
+    82%  { transform: translate(7px, 1px) rotate(5deg) scale(1.01, 0.99); }
+    100% { transform: translateY(0) rotate(0) scale(1, 1); }
+  }
+
+  /* 眉毛：往中间压的倒八 */
+  .brows { position: absolute; top: 44px; left: 0; width: 100%; }
+  .brow {
+    position: absolute;
+    width: 30px; height: 7px;
+    background: #2f2b40;
+    border-radius: 5px;
+    transition: transform 0.15s ease;
+  }
+  .brow.l { left: 44px;  transform: rotate(20deg); }
+  .brow.r { right: 44px; transform: rotate(-20deg); }
+  .blob.annoyed .brow.l { transform: rotate(30deg) translate(1px, 3px); }
+  .blob.annoyed .brow.r { transform: rotate(-30deg) translate(-1px, 3px); }
+
+  /* 眼睛：半耷拉着，很不屑 */
+  .eyes { position: absolute; top: 64px; left: 0; width: 100%; display: flex; justify-content: center; gap: 46px; }
   .eye {
-    width: 30px; height: 34px;
-    background: #34304a;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    transition: transform 0.1s ease-out;
+    position: relative;
+    width: 34px; height: 20px;
+    background: #e9e6f0;
+    border-radius: 5px 5px 18px 18px;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 1px;
     overflow: hidden;
+    transition: height 0.15s ease;
   }
   .pupil {
-    width: 20px; height: 20px;
-    background: #fff;
+    width: 12px; height: 12px;
+    background: #2f2b40;
     border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    transition: transform 0.1s ease-out;
+    transition: transform 0.15s ease-out;
   }
-  .shine {
-    width: 7px; height: 7px;
-    background: #fff;
-    border-radius: 50%;
-    transform: translate(-4px, -4px);
-  }
-  .blob.happy .eye { height: 8px; border-radius: 20px; margin-top: 12px; }
-  .blob.happy .pupil { opacity: 0; }
+  .blob.annoyed .eye { height: 13px; }
 
-  /* 腮红 */
-  .blush {
-    position: absolute; top: 100px; width: 26px; height: 14px;
-    background: rgba(255, 108, 118, 0.55);
-    border-radius: 50%;
-    filter: blur(4px);
-    opacity: 0.75;
+  /* 头顶冒的火花 */
+  .vein {
+    position: absolute; top: 12px; right: 32px;
+    width: 26px; height: 26px;
+    opacity: 0.9;
+    animation: veinPulse 1.6s ease-in-out infinite;
+    transform-origin: center;
   }
-  .blush.l { left: 26px; }
-  .blush.r { right: 26px; }
+  @keyframes veinPulse {
+    0%, 100% { transform: scale(1); opacity: 0.75; }
+    50%      { transform: scale(1.18); opacity: 1; }
+  }
+  .blob.annoyed .vein { animation-duration: 0.45s; }
 
-  /* 微笑的嘴 */
+  /* 瘪着的嘴 */
   .mouth {
     position: absolute; left: 50%; top: 104px; transform: translateX(-50%);
-    width: 26px; height: 13px;
-    border: 3.5px solid #34304a;
-    border-top: none;
-    border-radius: 0 0 30px 30px;
+    width: 30px; height: 11px;
+    border: 3.5px solid #2f2b40;
+    border-bottom: none;
+    border-radius: 30px 30px 0 0;
     transition: all 0.15s ease;
   }
-  .blob.happy .mouth { width: 38px; height: 22px; border-width: 4.5px; }
+  .blob.annoyed .mouth { width: 24px; height: 8px; border-width: 4.5px; }
 
   /* 影子 */
   .shadow {
     position: absolute; bottom: -26px; left: 50%; transform: translateX(-50%);
     width: 120px; height: 22px; border-radius: 50%;
-    background: radial-gradient(ellipse, rgba(0,0,0,0.45), transparent 70%);
-    animation: shadowScale 3.6s ease-in-out infinite;
+    background: radial-gradient(ellipse, rgba(0,0,0,0.5), transparent 70%);
+    animation: shadowScale 4.4s ease-in-out infinite;
   }
   @keyframes shadowScale {
-    0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.55; }
-    50%      { transform: translateX(-50%) scale(0.78); opacity: 0.32; }
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.5; }
+    50%      { transform: translateX(-50%) scale(0.9); opacity: 0.4; }
   }
 
-  /* 飘起来的爱心 / 星星 */
+  /* 被点后往外蹦的不爽符号 */
   .floaty-bit {
     position: absolute;
     pointer-events: none;
-    font-size: 22px;
-    animation: rise 1.5s ease-out forwards;
+    animation: burst 0.9s ease-out forwards;
     will-change: transform, opacity;
   }
-  @keyframes rise {
-    0%   { transform: translate(0, 0) scale(0.4) rotate(0deg); opacity: 0; }
+  .puff {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 38%, rgba(255,255,255,0.92), rgba(205,206,222,0.12) 70%);
+  }
+  @keyframes burst {
+    0%   { transform: translate(0, 0) scale(0.3); opacity: 0; }
     20%  { opacity: 1; }
-    100% { transform: translate(var(--dx), -140px) scale(1.1) rotate(var(--rot)); opacity: 0; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(var(--rot)); opacity: 0; }
   }
 
   /* 提示文字 */
   .hint {
-    color: #cfd4ee;
+    color: #b9bedd;
     font-size: 15px;
     letter-spacing: 1.5px;
     opacity: 0.75;
@@ -155,12 +179,12 @@
     text-align: center;
     line-height: 1.9;
   }
-  .hint b { color: #ffd479; font-weight: 600; }
+  .hint b { color: #d98b8b; font-weight: 600; }
 
   /* 团子的定位容器（让气泡挂在它头顶） */
   .blob-wrap { position: relative; }
 
-  /* 弹出的暖心话 —— 挂在团子头顶的对话气泡 */
+  /* 弹出的没好气的话 —— 挂在团子头顶的对话气泡 */
   .message {
     position: absolute;
     left: 50%;
@@ -170,16 +194,16 @@
     max-width: min(82vw, 520px);
     padding: 22px 30px;
     border-radius: 20px;
-    background: rgba(255, 250, 240, 0.98);
-    color: #3a2f47;
+    background: rgba(236, 236, 243, 0.98);
+    color: #2c2937;
     font-size: clamp(17px, 2.2vw, 24px);
     font-weight: 600;
     text-align: center;
     line-height: 1.7;
-    box-shadow: 0 18px 50px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.55) inset;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(120,120,160,0.25) inset;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
     z-index: 10;
   }
   /* 小尖角，指向下面的团子 */
@@ -190,7 +214,7 @@
     top: 100%;
     transform: translateX(-50%);
     border: 13px solid transparent;
-    border-top-color: rgba(255, 250, 240, 0.98);
+    border-top-color: rgba(236, 236, 243, 0.98);
     margin-top: -2px;
   }
   .message.show { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
@@ -203,17 +227,29 @@
    <div class="blob-wrap">
     <div class="message" id="message"></div>
     <div class="blob" id="blob">
-      <div class="eyes">
-        <div class="eye"><div class="pupil"><div class="shine"></div></div></div>
-        <div class="eye"><div class="pupil"><div class="shine"></div></div></div>
+      <div class="brows">
+        <div class="brow l"></div>
+        <div class="brow r"></div>
       </div>
-      <div class="blush l"></div>
-      <div class="blush r"></div>
+      <div class="eyes">
+        <div class="eye"><div class="pupil"></div></div>
+        <div class="eye"><div class="pupil"></div></div>
+      </div>
+      <svg class="vein" viewBox="0 0 40 40" fill="none"
+           stroke="#e05252" stroke-width="4.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <line x1="20" y1="20" x2="20" y2="4"/>
+        <line x1="20" y1="20" x2="33" y2="11"/>
+        <line x1="20" y1="20" x2="33" y2="29"/>
+        <line x1="20" y1="20" x2="20" y2="36"/>
+        <line x1="20" y1="20" x2="7" y2="29"/>
+        <line x1="20" y1="20" x2="7" y2="11"/>
+      </svg>
       <div class="mouth"></div>
       <div class="shadow"></div>
     </div>
    </div>
-    <div class="hint" id="hint">它一直在 <b>看着你</b> 呢<br />点它一下试试 :)</div>
+    <div class="hint" id="hint">看什么看。<br />……别拿手指戳<b>我</b>。</div>
   </div>
 
 <script>
@@ -222,82 +258,99 @@
   const messageEl = document.getElementById('message');
   const starsWrap = document.getElementById('stars');
 
-  /* —— 背景星光 —— */
+  /* —— 背景冷光点 —— */
   (function makeStars() {
-    const n = 60;
+    const n = 45;
     let html = '';
     for (let i = 0; i < n; i++) {
-      const size = (Math.random() * 2.2 + 1).toFixed(1);
+      const size = (Math.random() * 2 + 1).toFixed(1);
       html += `<div class="star" style="
         left:${(Math.random()*100).toFixed(2)}%;
         top:${(Math.random()*100).toFixed(2)}%;
         width:${size}px; height:${size}px;
-        --dur:${(Math.random()*4+3).toFixed(1)}s;
-        --delay:${(Math.random()*4).toFixed(1)}s;"></div>`;
+        --dur:${(Math.random()*5+4).toFixed(1)}s;
+        --delay:${(Math.random()*6).toFixed(1)}s;"></div>`;
     }
     starsWrap.innerHTML = html;
   })();
 
-  /* —— 眼睛跟着鼠标转 —— */
+  /* —— 眼睛躲着鼠标：越靠近，越往旁边撇，还带点俯视 —— */
   const pupils = document.querySelectorAll('.pupil');
   document.addEventListener('mousemove', (e) => {
     const rect = blob.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     const ang = Math.atan2(e.clientY - cy, e.clientX - cx);
-    const dist = Math.min(9, Math.hypot(e.clientX - cx, e.clientY - cy) / 22);
-    const x = Math.cos(ang) * dist;
-    const y = Math.sin(ang) * dist;
+    const dist = Math.min(7, Math.hypot(e.clientX - cx, e.clientY - cy) / 30);
+    // 往反方向躲，并稍稍往下看（不屑）
+    const x = -Math.cos(ang) * dist;
+    const y = -Math.sin(ang) * dist * 0.5 + 2;
     pupils.forEach(p => { p.style.transform = `translate(${x}px, ${y}px)`; });
   });
 
-  /* —— 暖心话 —— */
+  /* —— 没好气的话 —— */
   const messages = [
-    "你今天已经做得很好啦 🌷",
-    "嘿，你笑起来一定很好看 😊",
-    "别忘了，你也值得被温柔对待 🌙",
-    "深呼吸一下，一切都会好的 ☁️",
-    "这个世界因为有你，多了一点亮 ✨",
-    "累了就歇一歇，没关系的 🍵",
-    "你比你以为的，要勇敢得多 🌟",
-    "有人在偷偷惦记着你哦 💛",
-    "请把这份快乐，也分给下一个人 🤝",
-    "现在，给自己一个大大的拥抱吧 🫂"
+    "……干嘛。",
+    "不要碰我。",
+    "烦。",
+    "哼。",
+    "谁准你点我的。",
+    "我现在不想理任何人。",
+    "你怎么还没走。",
+    "再点一下试试看。",
+    "……哦。",
+    "无语。",
+    "就你事多。",
+    "离我远点。",
+    "手拿开。",
+    "你是闲得慌吗。"
   ];
   let lastIndex = -1;
 
-  /* —— 点一下，蹦起来撒心 —— */
-  const bits = ['💛', '✨', '🌷', '💛', '⭐', '🎈', '🌟', '💖'];
+  /* —— 点一下，甩头冒火 —— */
+  const SPARK = `<svg viewBox="0 0 40 40" width="100%" height="100%" fill="none"
+      stroke="#e05252" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="20" y1="20" x2="20" y2="4"/>
+      <line x1="20" y1="20" x2="33" y2="11"/>
+      <line x1="20" y1="20" x2="33" y2="29"/>
+      <line x1="20" y1="20" x2="20" y2="36"/>
+      <line x1="20" y1="20" x2="7" y2="29"/>
+      <line x1="20" y1="20" x2="7" y2="11"/>
+    </svg>`;
   let msgTimer = null;
 
-  function pop(x, y) {
-    // 蹦跳
-    blob.classList.remove('hop');
+  function grumpReaction() {
+    // 甩头摇头
+    blob.classList.remove('grump');
     void blob.offsetWidth;
-    blob.classList.add('hop');
-    blob.classList.add('happy');
-    setTimeout(() => blob.classList.remove('happy'), 700);
+    blob.classList.add('grump');
 
-    // 撒出小心心
+    // 加深臭脸
+    blob.classList.add('annoyed');
+    clearTimeout(blob._annoyTimer);
+    blob._annoyTimer = setTimeout(() => blob.classList.remove('annoyed'), 900);
+
+    // 往外蹦几个不爽符号
     const rect = blob.getBoundingClientRect();
     const originX = rect.left + rect.width / 2;
     const originY = rect.top + rect.height / 2;
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 9; i++) {
       const bit = document.createElement('div');
       bit.className = 'floaty-bit';
-      bit.textContent = bits[Math.floor(Math.random() * bits.length)];
-      const startX = originX + (Math.random() - 0.5) * 120;
-      const startY = originY + (Math.random() - 0.5) * 60;
-      bit.style.left = startX + 'px';
-      bit.style.top = startY + 'px';
-      bit.style.setProperty('--dx', ((Math.random() - 0.5) * 160).toFixed(0) + 'px');
-      bit.style.setProperty('--rot', ((Math.random() - 0.5) * 120).toFixed(0) + 'deg');
-      bit.style.fontSize = (16 + Math.random() * 16).toFixed(0) + 'px';
+      bit.innerHTML = Math.random() < 0.7 ? SPARK : '<div class="puff"></div>';
+      const sz = 14 + Math.random() * 14;
+      bit.style.width = sz + 'px';
+      bit.style.height = sz + 'px';
+      bit.style.left = (originX + (Math.random() - 0.5) * 90) + 'px';
+      bit.style.top  = (originY + (Math.random() - 0.5) * 60) + 'px';
+      bit.style.setProperty('--dx', ((Math.random() - 0.5) * 220).toFixed(0) + 'px');
+      bit.style.setProperty('--dy', (-30 - Math.random() * 90).toFixed(0) + 'px');
+      bit.style.setProperty('--rot', ((Math.random() - 0.5) * 160).toFixed(0) + 'deg');
       document.body.appendChild(bit);
-      setTimeout(() => bit.remove(), 1600);
+      setTimeout(() => bit.remove(), 1000);
     }
 
-    // 弹一句暖心话
+    // 甩一句没好气的话
     let idx;
     do { idx = Math.floor(Math.random() * messages.length); }
     while (idx === lastIndex && messages.length > 1);
@@ -306,27 +359,25 @@
     messageEl.textContent = messages[idx];
     messageEl.classList.add('show');
     clearTimeout(msgTimer);
-    msgTimer = setTimeout(() => messageEl.classList.remove('show'), 2600);
+    msgTimer = setTimeout(() => messageEl.classList.remove('show'), 2000);
 
     hint.style.opacity = '0';
   }
 
-  /* 蹦一下结束后，把 hop 类摘掉，让团子继续慢慢漂浮 */
+  /* 甩完头，恢复继续不耐烦地晃 */
   blob.addEventListener('animationend', (e) => {
-    if (e.animationName === 'hop') blob.classList.remove('hop');
+    if (e.animationName === 'grump') blob.classList.remove('grump');
   });
 
   document.addEventListener('pointerdown', (e) => {
-    // 避免点消息框时重复触发，其余任意处都可触发
-    pop(e.clientX, e.clientY);
+    grumpReaction();
   });
 
-  // 键盘空格 / 回车也能逗它
+  // 键盘空格 / 回车也能惹它烦
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'Enter') {
       e.preventDefault();
-      const rect = blob.getBoundingClientRect();
-      pop(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      grumpReaction();
     }
   });
 </script>
