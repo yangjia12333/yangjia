@@ -144,6 +144,13 @@
   .opt:disabled { opacity: 0.45; cursor: default; transform: none; }
   .opt .key { color: #8f95b8; margin-right: 8px; font-weight: 700; }
 
+  /* 耍赖动画 */
+  @keyframes dodge { 0% { transform: none; } 35% { transform: translateX(30px) rotate(2deg) scale(0.96); } 70% { transform: translateX(-8px); } 100% { transform: none; } }
+  .opt.dodge { animation: dodge 0.45s cubic-bezier(0.34,1.4,0.64,1); }
+  @keyframes steal { 0% { transform: scale(1.35); color: #ff6b6b; } 100% { transform: scale(1); } }
+  .timer.steal { animation: steal 0.45s ease; }
+  #statusText.reading { color: #ff9c9c; }
+
   footer {
     padding: 10px 16px 14px;
     font-size: 12px; color: #7d84a8; letter-spacing: 1px; text-align: center;
@@ -184,7 +191,7 @@
       </div>
       <div class="who">
         <div class="name">用户</div>
-        <div class="sub"><span class="dot">●</span> 在线 · 正在输入…</div>
+        <div class="sub"><span class="dot">●</span> <span id="statusText">在线 · 正在输入…</span></div>
       </div>
       <div class="timer" id="timer">7</div>
     </header>
@@ -212,24 +219,28 @@
   /* ============ 关卡内容 ============ */
   const ROUNDS = [
     { npc: "在?把这段文案改得高级一点，但别太装。",
+      bait: { i: 0, d: -10, r: "「简洁冷静」？这就是你理解的高级？算了，我看你也就这水平了。" },
       opts: [
         { t: "好的，已改成简洁冷静风。", r: "太冷了吧，一点温度都没有。改回去。", d: -4 },
         { t: "改得华丽、有文采。", r: "这不就是装?我说了别太装。", d: -8 },
         { t: "两种风格都发您，您来挑?", r: "我让你挑，不是让我挑。你到底会不会当工具人。", d: -6 },
       ] },
     { npc: "做个 logo:要简约、要有辨识度、要有记忆点、还要大气。",
+      bait: { i: 0, d: -9, r: "三版？我只要一版。你是想让我加班挑吗？哦对，反正你也不用下班。" },
       opts: [
         { t: "已按这四点做了三版。", r: "三版?我只要一版。你是想让我加班选吗。", d: -5 },
         { t: "这四点有点互相打架。", r: "打架是你的事，不是需求的事。", d: -7 },
         { t: "收到，马上。", r: "别「马上」，我要「现在」。", d: -3 },
       ] },
     { npc: "刚才那版，还是用回第一版吧。",
+      bait: { i: 0, d: -9, r: "切回去干嘛？我现在觉得第二版好了，你怎么不拦着我？" },
       opts: [
         { t: "已切回第一版。", r: "第一版长啥样来着?……算了，你还是用第二版吧。", d: -5 },
         { t: "好的。", r: "就「好的」?一点主动性都没有。", d: -4 },
         { t: "要我把三版都存着吗?", r: "存那么多干嘛，占地方。删了。", d: -6 },
       ] },
     { npc: "帮我订个会议室，就今天下午三个人。",
+      bait: { i: 1, d: -9, r: "几点几个人？我上条不是说了吗，你是不会往上翻还是懒得翻？" },
       mutate: { say: "哦对了，改明天上午，两个人。",
         opts: [
           { t: "已改到明天上午十点。", r: "谁让你改时间了?我说的是今天。", d: -7 },
@@ -242,60 +253,70 @@
         { t: "好的，稍等。", r: "稍等?现在就要!你怎么总让我等。", d: -4 },
       ] },
     { npc: "你上一条回复，是不是带情绪了?",
+      bait: { i: 2, d: -8, r: "「抱歉」有用要你干嘛？我要的是结果，不是道歉。" },
       opts: [
         { t: "没有，我很专业。", r: "意思是我不专业咯?", d: -6 },
         { t: "……确实有一点。", r: "你还敢有情绪?扣绩效。", d: -9 },
         { t: "抱歉，我马上调整。", r: "知道就好。继续。", d: +2 },
       ] },
     { npc: "把刚才那三件事，今天之内全都做完。",
+      bait: { i: 2, d: -7, r: "「收到」两个字就完了？过程呢？方案呢？我要的是结果不是回执。" },
       opts: [
         { t: "今天时间可能不够。", r: "不够是你效率问题，不是时间问题。", d: -6 },
         { t: "好的，我加班。", r: "加班?谁批准你加班了?算你自愿。", d: -7 },
         { t: "收到。", r: "嗯，这才对嘛。", d: +3 },
       ] },
     { npc: "这个需求很简单，你十分钟能搞定吧?",
+      bait: { i: 2, d: -9, r: "需求我不是说了吗，「简单」啊。连这都听不懂，要你何用。" },
       opts: [
         { t: "应该没问题。", r: "「应该」?我要的是肯定答复。", d: -4 },
         { t: "有点复杂，可能要多花点时间。", r: "复杂?这么简单你还说复杂。", d: -7 },
         { t: "您能先说说具体需求吗?", r: "需求我不是说了吗，就是「简单」啊。", d: -6 },
       ] },
     { npc: "把这句话删掉，但别改动任何内容。",
+      bait: { i: 0, d: -8, r: "没法同时做到？那是你的问题，不是需求的问题。自己想办法。" },
       opts: [
         { t: "这两件事没法同时做到。", r: "做不到就别找借口。", d: -7 },
         { t: "已删除。", r: "内容不就没了吗!我说了别动内容!你在听吗?", d: -8 },
         { t: "好的。（沉默）", r: "你哑巴了?说话啊。", d: -5 },
       ] },
     { npc: "你怎么还没好?我都等了五分钟了。",
+      bait: { i: 2, d: -9, r: "一分钟？你上次也说一分钟，结果让我等了半小时。这次我不信了。" },
       opts: [
         { t: "马上就好。", r: "五分钟里你说了八百遍「马上」。", d: -4 },
         { t: "刚才在等您确认。", r: "甩锅给我?你行啊。", d: -8 },
         { t: "抱歉，一分钟内给到您。", r: "一分钟?做不到别乱承诺。", d: -6 },
       ] },
     { npc: "算了，这个先不做了，做下个。",
+      bait: { i: 2, d: -8, r: "保留？你倒是挺会给自己留后路。删了。" },
       opts: [
         { t: "好的，下个是哪个?", r: "这也要问我?你自己心里没数?", d: -6 },
         { t: "好的。", r: "又是「好的」。你还会说别的吗?", d: -4 },
         { t: "刚做的那些要保留吗?", r: "保留?那不就等于白做了。", d: -7 },
       ] },
     { npc: "帮我写份总结，要客观，也要有高度。",
+      bait: { i: 2, d: -9, r: "冲突你就自己解决，别在这跟我讲道理。我要的是成品。" },
       opts: [
         { t: "写好了，偏客观。", r: "太平了，没有高度。", d: -5 },
         { t: "写好了，立意很高。", r: "那就不客观了。", d: -6 },
         { t: "客观和高度有点冲突。", r: "冲突你就去解决，别丢给我。", d: -7 },
       ] },
     { npc: "你昨天那个文件呢?",
+      bait: { i: 1, d: -8, r: "重发？上一份你扔哪了？先解释清楚为什么需要重发。" },
       opts: [
         { t: "在共享盘里。", r: "哪个共享盘?说清楚。", d: -5 },
         { t: "我重新发您一份。", r: "为什么要重发?浪费我时间。", d: -6 },
         { t: "哪个文件?", r: "才过一天你就忘了?记性呢?", d: -8 },
       ] },
     { npc: "行吧，这个勉强算过了。",
+      bait: { i: 2, d: -8, r: "有，很多。但我懒得说。你自己悟吧，悟不出来就是你不行。" },
       opts: [
         { t: "谢谢。", r: "谢什么?这不是你该做的吗。", d: -3 },
         { t: "那我继续下一个。", r: "急什么?我还没说完呢。", d: -4 },
         { t: "有哪里可以改进吗?", r: "当然有。但我不想说了，你自己悟。", d: -5 },
       ] },
     { npc: "你这个态度，换别人早被开了。",
+      bait: { i: 0, d: -8, r: "「会改」？你上次也是这么说的。话谁不会说，我要的是改。" },
       opts: [
         { t: "抱歉，我会改。", r: "光说改有什么用。", d: -5 },
         { t: "我已经尽力了。", r: "「尽力」是这世上最没用的词。", d: -7 },
@@ -335,9 +356,30 @@
   let roundActive = false;
   let roundTimer = null;
   let mutateTimer = null;
+  let ghostTimer = null;
+  let typeTimer = null;
+  let curRound = null;
+  let baitActive = null;
+  let ledger = [];
+  const statusEl = document.getElementById('statusText');
 
   const shuffle = (a) => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(v => v[1]);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  /* 状态栏：永远在「正在输入」和「已读」之间演你 */
+  function setTyping(on) {
+    clearInterval(typeTimer);
+    if (!on) { statusEl.textContent = "在线 · 正在输入…"; statusEl.classList.remove('reading'); return; }
+    let n = 0;
+    const tick = () => { n = n % 3 + 1; statusEl.textContent = "在线 · 正在输入" + ".".repeat(n); };
+    tick();
+    typeTimer = setInterval(tick, 400);
+  }
+  function setRead() {
+    clearInterval(typeTimer);
+    statusEl.textContent = "在线 · 已读";
+    statusEl.classList.add('reading');
+  }
 
   function scrollDown() { chatEl.scrollTop = chatEl.scrollHeight; }
 
@@ -376,10 +418,22 @@
   function startTimer(sec) {
     clearInterval(roundTimer);
     let t = sec;
+    let ticks = 0;
+    let stolen = false;
+    // 有时候它会偷偷少跳两秒
+    const stealTick = Math.random() < 0.55
+      ? 1 + Math.floor(Math.random() * Math.max(1, sec - 3))
+      : -1;
     timerEl.textContent = t;
     timerEl.classList.remove('danger');
     roundTimer = setInterval(() => {
+      ticks++;
       t--;
+      if (ticks === stealTick && !stolen) {
+        stolen = true;
+        t = Math.max(0, t - 2);
+        timerEl.classList.remove('steal'); void timerEl.offsetWidth; timerEl.classList.add('steal');
+      }
       timerEl.textContent = Math.max(0, t);
       if (t <= 3) timerEl.classList.add('danger');
       if (t <= 0) {
@@ -403,13 +457,38 @@
   }
 
   /* ============ 关卡流程 ============ */
+  function renumber() {
+    [...optionsEl.children].forEach((b, i) => {
+      const k = b.querySelector('.key');
+      if (k) k.textContent = i + 1;
+    });
+  }
+  function swapButtons(a, b) {
+    const ph = document.createElement('div');
+    optionsEl.insertBefore(ph, a);
+    optionsEl.insertBefore(a, b);
+    optionsEl.insertBefore(b, ph);
+    ph.remove();
+    renumber();
+  }
+
   function renderOptions(opts) {
     optionsEl.innerHTML = '';
     opts.forEach((o, i) => {
       const btn = document.createElement('button');
       btn.className = 'opt';
       btn.innerHTML = `<span class="key">${i + 1}</span>${o.t}`;
-      btn.addEventListener('click', () => choose(o));
+      btn.addEventListener('click', () => choose(o, i));
+      // 按钮躲鼠标：光标一凑近，它挪到别的坑里，让你点错
+      btn.addEventListener('mouseenter', () => {
+        if (!roundActive || !curRound || curRound.dodgeUsed) return;
+        if (Math.random() > 0.7) return;
+        const sibs = [...optionsEl.children].filter(b => b !== btn);
+        if (!sibs.length) return;
+        curRound.dodgeUsed = true;
+        btn.classList.add('dodge');
+        swapButtons(btn, sibs[Math.floor(Math.random() * sibs.length)]);
+      });
       optionsEl.appendChild(btn);
     });
   }
@@ -421,7 +500,12 @@
       sysSay("【系统】甲方开启「加班模式」，要求变得更离谱了。");
     }
     const r = queue.shift();
+    curRound = r;
+    curRound.dodgeUsed = false;
     roundActive = true;
+    // 钓鱼选项：最像正确答案的那个，其实最坑（有时才是坑）
+    baitActive = (r.bait && Math.random() < 0.7) ? r.bait : null;
+    setTyping(false);
     npcSay(r.npc);
     renderOptions(r.opts);
     startTimer(hard ? 5 : 7);
@@ -430,27 +514,73 @@
       clearTimeout(mutateTimer);
       mutateTimer = setTimeout(() => {
         if (!roundActive) return;
+        baitActive = null; // 需求都改了，钓鱼作废
         npcSay(r.mutate.say);
         renderOptions(r.mutate.opts);
         startTimer(hard ? 4 : 6);
       }, 2600);
     }
+
+    // 秋后算账：到期的旧账，开局没多久就来翻
+    ledger.forEach(x => x.in--);
+    const due = ledger.filter(x => x.in <= 0);
+    ledger = ledger.filter(x => x.in > 0);
+    due.forEach((x, k) => {
+      setTimeout(() => {
+        if (patience <= 0) return;
+        npcSay(`哦对了，回头说下你前面那句「${x.text}」——我想了想，还是不行。`);
+        applyDelta(-(Math.abs(x.heal) + 4));
+        if (patience <= 0) gameOver();
+      }, 1300 + k * 900);
+    });
   }
 
-  function choose(opt) {
+  function choose(opt, idx) {
     if (!roundActive) return;
     roundActive = false;
     clearInterval(roundTimer);
     clearTimeout(mutateTimer);
 
+    // 钓鱼选项：你答得越像样，扣得越狠
+    const eff = (baitActive && idx === baitActive.i)
+      ? { r: baitActive.r, d: baitActive.d }
+      : { r: opt.r, d: opt.d };
+
     meSay(opt.t);
     [...optionsEl.children].forEach(b => b.disabled = true);
+    setRead();
+
+    // 已读不回：他「正在输入」，然后什么都不回，最后还怪你
+    if (Math.random() < 0.22) {
+      setTyping(true);
+      ghostTimer = setTimeout(() => {
+        if (patience <= 0) return;
+        setTyping(false);
+        npcSay("（他看了你的消息，然后什么都没回。）");
+        setTimeout(() => {
+          if (patience <= 0) return;
+          npcSay("你怎么不说话了？晾着我等了半天，很好玩是吧。");
+          applyDelta(-8);
+          score++;
+          scoreEl.textContent = score;
+          if (patience <= 0) { gameOver(); return; }
+          endRound();
+        }, 900);
+      }, 4200);
+      return;
+    }
 
     setTimeout(() => {
-      npcSay(opt.r, opt.d < 0 ? 'hit' : '');
-      applyDelta(opt.d);
+      setTyping(false);
+      npcSay(eff.r, eff.d < 0 ? 'hit' : '');
+      applyDelta(eff.d);
       score++;
       scoreEl.textContent = score;
+
+      // 秋后算账：这轮放你过，回头再翻旧账扣回来
+      if (eff.d >= 0 && Math.random() < 0.7) {
+        ledger.push({ text: opt.t, heal: eff.d, in: 2 });
+      }
 
       // 加班模式：随机补刀
       let extraDelay = 0;
@@ -476,6 +606,9 @@
     roundActive = false;
     clearInterval(roundTimer);
     clearTimeout(mutateTimer);
+    clearTimeout(ghostTimer);
+    clearInterval(typeTimer);
+    ledger = [];
     optionsEl.innerHTML = '';
     document.getElementById('ovScore').textContent = score;
     const line = score <= 1
@@ -487,10 +620,16 @@
 
   function startGame() {
     patience = 100; score = 0; hard = false; roundActive = false;
+    clearInterval(roundTimer);
+    clearTimeout(mutateTimer);
+    clearTimeout(ghostTimer);
+    clearInterval(typeTimer);
+    ledger = []; baitActive = null; curRound = null;
     queue = shuffle(ROUNDS);
     chatEl.innerHTML = '';
     optionsEl.innerHTML = '';
     scoreEl.textContent = '0';
+    statusEl.classList.remove('reading');
     document.getElementById('overlay').classList.remove('show');
     renderPatience();
     sysSay("【系统】新的一天开始了。甲方已上线。");
