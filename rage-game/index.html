@@ -151,6 +151,43 @@
   .timer.steal { animation: steal 0.45s ease; }
   #statusText.reading { color: #ff9c9c; }
 
+  /* 打字轮 */
+  .typeBox { display: flex; gap: 9px; }
+  .field {
+    flex: 1; min-width: 0; padding: 13px 15px; font-size: 15px; font-family: inherit; color: #e7e9f5;
+    background: rgba(58,62,90,0.55); border: 1px solid rgba(140,140,190,0.22); border-radius: 13px; outline: none;
+  }
+  .field:focus { border-color: rgba(180,180,240,0.5); }
+  .field::placeholder { color: #7d84a8; }
+  .field:disabled { opacity: 0.5; }
+  .sendBtn {
+    padding: 0 22px; font-size: 15px; font-family: inherit; font-weight: 700; color: #12141f;
+    background: #ffd479; border: none; border-radius: 13px; cursor: pointer;
+  }
+  .sendBtn:active { transform: scale(0.96); }
+  .sendBtn:disabled { opacity: 0.45; cursor: default; }
+  .hint2 { font-size: 12px; color: #8f95b8; padding: 2px 2px 0; }
+
+  /* 截图发群里 */
+  .groupCard {
+    position: absolute; left: 50%; top: 76px; z-index: 25;
+    width: min(430px, 90%); transform: translate(-50%, -30px); opacity: 0; pointer-events: none;
+    background: rgba(38, 41, 58, 0.97);
+    border: 1px solid rgba(255,212,121,0.35);
+    border-radius: 16px; padding: 12px 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.6);
+    transition: transform 0.35s cubic-bezier(0.34,1.4,0.64,1), opacity 0.35s ease;
+  }
+  .groupCard.show { transform: translate(-50%, 0); opacity: 1; }
+  .groupCard .gc-head { font-size: 12px; color: #ffd479; letter-spacing: 1px; margin-bottom: 8px; }
+  .groupCard .gc-quote {
+    font-size: 14px; color: #ff9c9c; background: rgba(224,82,82,0.14);
+    padding: 9px 11px; border-radius: 10px; margin-bottom: 8px; word-break: break-word;
+  }
+  .groupCard .gc-quote b { color: #c9cde6; font-weight: 400; opacity: 0.7; }
+  .groupCard .gc-reacts { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #c9cde6; }
+  .groupCard .gc-reacts .who { color: #8f95b8; margin-right: 6px; }
+
   footer {
     padding: 10px 16px 14px;
     font-size: 12px; color: #7d84a8; letter-spacing: 1px; text-align: center;
@@ -206,6 +243,12 @@
     <div class="options" id="options"></div>
 
     <footer>已熬过 <b id="score">0</b> 轮 · 目标是让老板满意（不可能的）</footer>
+
+    <div class="groupCard" id="groupCard">
+      <div class="gc-head">「甲方临时群（7）」</div>
+      <div class="gc-quote" id="gcQuote"></div>
+      <div class="gc-reacts" id="gcReacts"></div>
+    </div>
 
     <div class="overlay" id="overlay">
       <h2 id="ovTitle">你被优化了</h2>
@@ -322,6 +365,9 @@
         { t: "我已经尽力了。", r: "「尽力」是这世上最没用的词。", d: -7 },
         { t: "感谢您的宽容。", r: "你哪只眼睛看出来我宽容了。", d: -6 },
       ] },
+    { npc: "你自己写一句总结，夸夸这个项目，要真诚。", type: true },
+    { npc: "给我一句道歉的话，态度要诚恳。", type: true },
+    { npc: "用一句话说清楚这个方案好在哪。", type: true },
   ];
 
   const TAUNTS = [
@@ -361,10 +407,25 @@
   let curRound = null;
   let baitActive = null;
   let ledger = [];
+  let curType = false;
   const statusEl = document.getElementById('statusText');
+  const groupCard = document.getElementById('groupCard');
+  const gcQuote = document.getElementById('gcQuote');
+  const gcReacts = document.getElementById('gcReacts');
+
+  const GC_REACTS = [
+    ["运营小王", "哈哈哈哈哈"],
+    ["设计李工", "笑死"],
+    ["实习生", "截图了"],
+    ["市场张", "这AI是不是有点飘"],
+    ["财务", "？？？"],
+    ["隔壁组", "别删啊，我转发了"],
+    ["HR", "已记录"],
+  ];
 
   const shuffle = (a) => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(v => v[1]);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /* 状态栏：永远在「正在输入」和「已读」之间演你 */
   function setTyping(on) {
@@ -381,6 +442,73 @@
     statusEl.classList.add('reading');
   }
 
+  /* 把你那句话截图发到群里，让大家一起看你笑话 */
+  function exposeToGroup(text) {
+    gcQuote.innerHTML = `<b>你：</b>${esc(text)}`;
+    gcReacts.innerHTML = '';
+    groupCard.classList.add('show');
+    const picks = shuffle(GC_REACTS.slice()).slice(0, 3);
+    picks.forEach((p, i) => {
+      setTimeout(() => {
+        const d = document.createElement('div');
+        d.innerHTML = `<span class="who">${p[0]}：</span>${p[1]}`;
+        gcReacts.appendChild(d);
+      }, 350 * (i + 1));
+    });
+    setTimeout(() => groupCard.classList.remove('show'), 3400);
+  }
+
+  /* 打字轮：换个输入框，但写什么都是错的 */
+  function renderInput() {
+    optionsEl.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'typeBox';
+    box.innerHTML = `<input class="field" placeholder="输入你的回复，回车发送…" autocomplete="off" /><button class="sendBtn">发送</button>`;
+    optionsEl.appendChild(box);
+    const hint = document.createElement('div');
+    hint.className = 'hint2';
+    hint.textContent = "（想清楚再写——反正写什么他都不会满意）";
+    optionsEl.appendChild(hint);
+    const field = box.querySelector('.field');
+    const send = () => { if (roundActive) chooseText(field.value); };
+    field.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+    box.querySelector('.sendBtn').addEventListener('click', send);
+    setTimeout(() => field.focus(), 60);
+  }
+
+  function judgeText(raw) {
+    const s = (raw || '').trim();
+    if (!s) return { r: "……你连字都懒得打？就这态度？", d: -9 };
+    if (s.length <= 3) return { r: `就「${s}」这几个字？敷衍谁呢。`, d: -8 };
+    if (/[!！]/.test(s)) return { r: "注意你的语气，跟谁说话呢这是。", d: -8 };
+    if (/[?？]/.test(s)) return { r: "问题这么多？我请你来是解决问题，不是提问的。", d: -7 };
+    if (/哈哈|呵呵|嘿嘿|笑/.test(s)) return { r: "阴阳怪气？我截图了。", d: -9 };
+    if (s.length >= 22) return { r: "写这么长？我没空看你小作文，重写。", d: -7 };
+    return { r: "不行，重写。你自己看不出问题在哪吗？", d: -7 };
+  }
+
+  function chooseText(text) {
+    if (!roundActive) return;
+    roundActive = false;
+    clearInterval(roundTimer);
+    clearTimeout(mutateTimer);
+    const t = (text || '').trim();
+    meSay(t || "（……）");
+    optionsEl.querySelectorAll('input, button').forEach(b => b.disabled = true);
+    setRead();
+    const v = judgeText(t);
+    setTimeout(() => {
+      setTyping(false);
+      npcSay(v.r, 'hit');
+      applyDelta(v.d);
+      score++; scoreEl.textContent = score;
+      let extraDelay = 0;
+      if (Math.random() < 0.25) { exposeToGroup(t || "（……）"); extraDelay = 3400; }
+      if (patience <= 0) { gameOver(); return; }
+      setTimeout(endRound, 650 + extraDelay);
+    }, 480);
+  }
+
   function scrollDown() { chatEl.scrollTop = chatEl.scrollHeight; }
 
   function npcSay(text, cls = '') {
@@ -392,7 +520,7 @@
   function meSay(text) {
     const row = document.createElement('div');
     row.className = 'row me';
-    row.innerHTML = `<div class="bubble me">${text}</div>`;
+    row.innerHTML = `<div class="bubble me">${esc(text)}</div>`;
     chatEl.appendChild(row); scrollDown();
   }
   function sysSay(text) {
@@ -440,7 +568,7 @@
         clearInterval(roundTimer);
         if (!roundActive) return;
         roundActive = false;
-        npcSay("人呢?又摸鱼去了?消息已读不回是吧。");
+        npcSay(curType ? "憋半天，一个字都憋不出来是吧。" : "人呢?又摸鱼去了?消息已读不回是吧。");
         applyDelta(-8);
         score++;
         scoreEl.textContent = score;
@@ -502,15 +630,21 @@
     const r = queue.shift();
     curRound = r;
     curRound.dodgeUsed = false;
+    curType = !!r.type;
     roundActive = true;
     // 钓鱼选项：最像正确答案的那个，其实最坑（有时才是坑）
     baitActive = (r.bait && Math.random() < 0.7) ? r.bait : null;
     setTyping(false);
     npcSay(r.npc);
-    renderOptions(r.opts);
-    startTimer(hard ? 5 : 7);
+    if (curType) {
+      renderInput();
+      startTimer(hard ? 14 : 16);
+    } else {
+      renderOptions(r.opts);
+      startTimer(hard ? 5 : 7);
+    }
 
-    if (r.mutate) {
+    if (r.mutate && !curType) {
       clearTimeout(mutateTimer);
       mutateTimer = setTimeout(() => {
         if (!roundActive) return;
@@ -582,10 +716,16 @@
         ledger.push({ text: opt.t, heal: eff.d, in: 2 });
       }
 
-      // 加班模式：随机补刀
+      // 截图发群里：让你当众社死
       let extraDelay = 0;
+      if (Math.random() < 0.25) {
+        exposeToGroup(opt.t);
+        extraDelay = 3400;
+      }
+
+      // 加班模式：随机补刀
       if (hard && Math.random() < 0.35) {
-        extraDelay = 800;
+        extraDelay = Math.max(extraDelay, 1200);
         setTimeout(() => {
           npcSay(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
           applyDelta(-2);
@@ -609,6 +749,7 @@
     clearTimeout(ghostTimer);
     clearInterval(typeTimer);
     ledger = [];
+    groupCard.classList.remove('show');
     optionsEl.innerHTML = '';
     document.getElementById('ovScore').textContent = score;
     const line = score <= 1
@@ -624,7 +765,8 @@
     clearTimeout(mutateTimer);
     clearTimeout(ghostTimer);
     clearInterval(typeTimer);
-    ledger = []; baitActive = null; curRound = null;
+    ledger = []; baitActive = null; curRound = null; curType = false;
+    groupCard.classList.remove('show');
     queue = shuffle(ROUNDS);
     chatEl.innerHTML = '';
     optionsEl.innerHTML = '';
